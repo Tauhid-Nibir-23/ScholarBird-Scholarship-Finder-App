@@ -66,10 +66,16 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ],
                       ),
-                      child: const Icon(
-                        Icons.school_outlined,
-                        size: 50,
-                        color: Colors.white,
+                      child: Image.asset(
+                        'assets/images/Logo_ScholarBird.png',
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Icon(
+                            Icons.school_outlined,
+                            size: 50,
+                            color: Colors.white,
+                          );
+                        },
                       ),
                     ),
                     const SizedBox(height: 16),

@@ -37,9 +37,9 @@ class _SplashScreenState extends State<SplashScreen>
 
     if (!mounted) return;
 
-    // Simply go to login - auth check can happen there
-    print('📝 Splash done, going to login');
-    Navigator.of(context).pushReplacementNamed('/login');
+    // Navigate to onboarding screen
+    print('📝 Splash done, going to onboarding');
+    Navigator.of(context).pushReplacementNamed('/onboarding');
   }
 
   @override
@@ -83,8 +83,8 @@ class _SplashScreenState extends State<SplashScreen>
                     ],
                   ),
                   child: Image.asset(
-                    'assets/images/Logo.png',
-                    fit: BoxFit.contain,
+                    'assets/images/Logo_ScholarBird.png',
+                    fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
                       // Fallback icon if logo not found
                       return Container(
