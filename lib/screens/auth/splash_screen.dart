@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -38,24 +37,9 @@ class _SplashScreenState extends State<SplashScreen>
 
     if (!mounted) return;
 
-    final prefs = await SharedPreferences.getInstance();
-    final isFirstTime = prefs.getBool('firstTime') ?? true;
-    final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
-
-    // Mark that user is no longer first time visitor
-    if (isFirstTime) {
-      await prefs.setBool('firstTime', false);
-    }
-
-    if (mounted) {
-      if (isFirstTime) {
-        Navigator.of(context).pushReplacementNamed('/onboarding');
-      } else if (isLoggedIn) {
-        Navigator.of(context).pushReplacementNamed('/home');
-      } else {
-        Navigator.of(context).pushReplacementNamed('/login');
-      }
-    }
+    // Simply go to login - auth check can happen there
+    print('📝 Splash done, going to login');
+    Navigator.of(context).pushReplacementNamed('/login');
   }
 
   @override

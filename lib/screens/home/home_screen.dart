@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -10,9 +11,15 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
+  Future<void> _logout() async {
+    await FirebaseAuth.instance.signOut();
+    if (mounted) {
+      Navigator.of(context).pushReplacementNamed('/login');
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       backgroundColor: const Color(0xFFF5F7FB),
       body: SingleChildScrollView(
         child: Column(
@@ -32,29 +39,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         Container(
                           width: 40,
                           height: 40,
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             shape: BoxShape.circle,
-                            image: const DecorationImage(
-                              image: AssetImage('assets/images/avatar.png'),
-                              fit: BoxFit.cover,
+                            gradient: LinearGradient(
+                              colors: [Color(0xFF5B7AE8), Color(0xFF3D5AC1)],
                             ),
-                            color: const Color(0xFF5B7AE8).withOpacity(0.1),
                           ),
-                          child: Image.asset(
-                            'assets/images/avatar.png',
-                            errorBuilder: (_, __, ___) => Container(
-                              decoration: const BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: LinearGradient(
-                                  colors: [Color(0xFF5B7AE8), Color(0xFF3D5AC1)],
-                                ),
-                              ),
-                              child: const Icon(
-                                Icons.person,
-                                color: Colors.white,
-                                size: 22,
-                              ),
-                            ),
+                          child: const Icon(
+                            Icons.person,
+                            color: Colors.white,
+                            size: 22,
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -74,7 +68,28 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                     IconButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (_) => AlertDialog(
+                            title: const Text('Logout'),
+                            content: const Text('Are you sure you want to logout?'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text('Cancel'),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                  _logout();
+                                },
+                                child: const Text('Logout', style: TextStyle(color: Colors.red)),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
                       icon: const Icon(Icons.notifications_none_outlined),
                       color: const Color(0xFF1A1A2E),
                     ),
@@ -411,7 +426,6 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
-  }
 
   Widget _buildScholarshipCard({
     required String title,
@@ -420,8 +434,7 @@ class _HomeScreenState extends State<HomeScreen> {
     required String? badge,
     required IconData icon,
     required VoidCallback onTap,
-  }) {
-    return GestureDetector(
+  }) => GestureDetector(
       onTap: onTap,
       child: Container(
         width: 160,
@@ -520,7 +533,6 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
-  }
 }
 
 

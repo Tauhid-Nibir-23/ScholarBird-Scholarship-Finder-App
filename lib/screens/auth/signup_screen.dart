@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'login_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -246,14 +247,122 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  void _handleSignUp() {
-    // TODO: Implement signup logic
+  void _handleSignUp() async {
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    final confirmPassword = _confirmPasswordController.text.trim();
+
+    // Validation
+    if (name.isEmpty || email.isEmpty || password.isEmpty) {
+      _showErrorDialog('Please fill all required fields');
+      return;
+    }
+
+    if (password != confirmPassword) {
+      _showErrorDialog('Passwords do not match');
+      return;
+    }
+
+    if (password.length < 6) {
+      _showErrorDialog('Password must be at least 6 characters');
+      return;
+    }
+
+    if (_selectedDepartment == null || _selectedDegree == null) {
+      _showErrorDialog('Please select department and degree');
+      return;
+    }
+
     setState(() => _isLoading = true);
-    
-    Future.delayed(const Duration(seconds: 2), () {
-      setState(() => _isLoading = false);
-      // Navigation logic here
-    });
+
+    try {
+      print('📝 Attempting to create user with email: $email');
+      
+      // Create user in Firebase
+      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      print('✅ User created successfully');
+
+      // Update user profile name
+      await FirebaseAuth.instance.currentUser?.updateDisplayName(name);
+      
+      print('✅ Profile updated with name: $name');
+
+      if (mounted) {
+        _showSuccessDialog('Account created successfully! Please log in.');
+      }
+    } catch (e) {
+      print('❌ Error: ${e.toString()}');
+      String errorMessage = 'Sign up failed: Please try again';
+      final errorStr = e.toString().toLowerCase();
+      
+      // Parse error from string (avoid type checks which fail on web)
+      if (errorStr.contains('email-already-in-use') || errorStr.contains('already in use')) {
+        errorMessage = 'Email is already in use';
+      } else if (errorStr.contains('invalid-email') || errorStr.contains('invalid email')) {
+        errorMessage = 'Email address is not valid';
+      } else if (errorStr.contains('weak-password') || errorStr.contains('too weak')) {
+        errorMessage = 'Password is too weak';
+      } else if (errorStr.contains('configuration-not-found')) {
+        errorMessage =
+            'Firebase Auth is not enabled. In Firebase Console: Authentication > Get started > Sign-in method > Email/Password = Enable. Also add localhost to Authorized domains.';
+      } else if (errorStr.contains('unauthorized')) {
+        errorMessage = 'Authentication failed';
+      } else if (e.toString().isNotEmpty) {
+        // Use first line of error
+        final firstLine = e.toString().split('\n').first;
+        if (firstLine.length < 100) {
+          errorMessage = 'Sign up failed: $firstLine';
+        }
+      }
+      
+      if (mounted) {
+        _showErrorDialog(errorMessage);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Error'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSuccessDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Success'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).pushReplacementNamed('/login');
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 }
 
