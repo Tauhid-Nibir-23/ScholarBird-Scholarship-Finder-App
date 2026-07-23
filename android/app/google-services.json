@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "792116114321",
+    "project_id": "scholarbird-6b7f3",
+    "storage_bucket": "scholarbird-6b7f3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:792116114321:android:27919cd68a5b078df9e030",
+        "android_client_info": {
+          "package_name": "com.example.scholarbird"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCKvSOVZFpRMrzqgBQ9j_KRxxjEKd4l3GY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
