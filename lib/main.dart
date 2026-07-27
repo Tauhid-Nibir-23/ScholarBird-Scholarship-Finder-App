@@ -5,6 +5,7 @@ import 'screens/auth/splash_screen.dart';
 import 'screens/auth/onboarding_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/signup_screen.dart';
+import 'admin/admin_dashboard.dart';
 import 'screens/home/home_screen.dart';
 
 void main() async {
@@ -49,6 +50,7 @@ class ScholarBirdApp extends StatelessWidget {
         '/login': (context) => const LoginScreen(),
         '/signup': (context) => const SignUpScreen(),
         '/home': (context) => const HomeScreen(),
+        '/admin': (context) => const AdminDashboard(),
       },
     );
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../services/role_navigation.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -41,7 +42,9 @@ class _SplashScreenState extends State<SplashScreen>
     final user = FirebaseAuth.instance.currentUser;
 
     if (user != null) {
-      Navigator.of(context).pushReplacementNamed('/home');
+      final route = await RoleNavigation.routeForUser(user.uid);
+      if (!mounted) return;
+      Navigator.of(context).pushReplacementNamed(route);
     } else {
       Navigator.of(context).pushReplacementNamed('/onboarding');
     }

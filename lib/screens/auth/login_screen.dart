@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../services/role_navigation.dart';
 import 'signup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -426,8 +427,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
       print('✅ Login successful, navigating to home');
       
+      final route = await RoleNavigation.routeForUser(
+        FirebaseAuth.instance.currentUser!.uid,
+      );
+
       if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/home');
+        Navigator.of(context).pushReplacementNamed(route);
       }
     } catch (e) {
       print('❌ Error: ${e.toString()}');
