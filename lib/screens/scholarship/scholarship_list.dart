@@ -120,7 +120,7 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
   List<String> _collectOptions(List<QueryDocumentSnapshot<Object?>> docs, String key) {
     final values = <String>{};
     for (final doc in docs) {
-      final data = doc.data() as Map<String, dynamic>;
+      final data = doc.data()! as Map<String, dynamic>;
       final raw = data[key];
       if (raw == null) continue;
       final value = raw.toString().trim();
@@ -332,7 +332,7 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF5B7AE8).withOpacity(0.1),
+                        color: const Color(0xFF5B7AE8).withValues(alpha: 0.1),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       )
@@ -544,8 +544,7 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
           onSelect(value);
         }
       },
-      itemBuilder: (BuildContext context) {
-        return [
+      itemBuilder: (BuildContext context) => [
           if (label != 'Sort') ...[
             PopupMenuItem(
               value: 'Clear',
@@ -574,8 +573,7 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
               ),
             );
           }).toList(),
-        ];
-      },
+        ],
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
@@ -587,7 +585,7 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
           boxShadow: selectedValue.isNotEmpty
               ? [
                   BoxShadow(
-                    color: const Color(0xFF5B7AE8).withOpacity(0.3),
+                    color: const Color(0xFF5B7AE8).withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   )
@@ -632,7 +630,7 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withValues(alpha: 0.08),
               blurRadius: 16,
               offset: const Offset(0, 4),
             )
@@ -679,11 +677,11 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
                   left: 12,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.95),
+                      color: Colors.white.withValues(alpha: 0.95),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
+                          color: Colors.black.withValues(alpha: 0.08),
                           blurRadius: 6,
                           offset: const Offset(0, 2),
                         ),
@@ -888,7 +886,7 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
 
   Map<String, dynamic> _buildScholarshipData(
       QueryDocumentSnapshot<Object?> doc) {
-    final s = doc.data() as Map<String, dynamic>;
+    final s = doc.data()! as Map<String, dynamic>;
     return {
       'id': doc.id,      
       'title': (s['title'] ?? '').toString(),

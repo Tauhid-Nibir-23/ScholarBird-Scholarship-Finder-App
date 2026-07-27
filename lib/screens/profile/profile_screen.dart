@@ -159,7 +159,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   if (department.isNotEmpty)
                                     _buildTag(
                                       department,
-                                      sbPrimary.withOpacity(0.1),
+                                      sbPrimary.withValues(alpha: 0.1),
                                       sbPrimary,
                                       sbPrimary,
                                     ),
@@ -200,7 +200,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 child: LinearProgressIndicator(
                                   value: completion / 100,
                                   minHeight: 8,
-                                  backgroundColor: sbPrimary.withOpacity(0.1),
+                                  backgroundColor: sbPrimary.withValues(alpha: 0.1),
                                   valueColor:
                                       const AlwaysStoppedAnimation<Color>(sbPrimary),
                                 ),

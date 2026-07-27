@@ -49,7 +49,7 @@ class ProfileMenuTile extends StatelessWidget {
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isDestructive ? Colors.red.withOpacity(0.2) : sbBorder,
+              color: isDestructive ? Colors.red.withValues(alpha: 0.2) : sbBorder,
             ),
           ),
           child: Row(
@@ -296,7 +296,7 @@ class ProfileEmptyState extends StatelessWidget {
               width: 120,
               height: 120,
               decoration: BoxDecoration(
-                color: sbPrimary.withOpacity(0.1),
+                color: sbPrimary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(60),
               ),
               child: Icon(

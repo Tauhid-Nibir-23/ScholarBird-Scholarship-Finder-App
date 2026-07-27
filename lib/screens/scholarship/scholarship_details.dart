@@ -6,8 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class ScholarshipDetailsScreen extends StatelessWidget {
 
   const ScholarshipDetailsScreen({
-    super.key,
-    required this.data,
+    required this.data, super.key,
     this.readOnly = false,
   });
   final Map<String, dynamic> data;
@@ -156,7 +155,7 @@ class ScholarshipDetailsScreen extends StatelessWidget {
             color: Colors.white,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.06),
+                color: Colors.black.withValues(alpha: 0.06),
                 blurRadius: 20,
                 offset: const Offset(0, -4),
               ),
@@ -276,7 +275,7 @@ class ScholarshipDetailsScreen extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),

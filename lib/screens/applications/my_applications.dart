@@ -122,7 +122,7 @@ class MyApplicationsScreen extends StatelessWidget {
         border: Border.all(color: sbBorder),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -161,7 +161,7 @@ class MyApplicationsScreen extends StatelessWidget {
                         padding:
                             const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: badgeColor.withOpacity(0.12),
+                          color: badgeColor.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -242,7 +242,7 @@ class MyApplicationsScreen extends StatelessWidget {
                       style: TextButton.styleFrom(
                         padding:
                             const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        backgroundColor: sbPrimary.withOpacity(0.08),
+                        backgroundColor: sbPrimary.withValues(alpha: 0.08),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -307,7 +307,7 @@ class MyApplicationsScreen extends StatelessWidget {
   Widget _buildImagePlaceholder(double size) => Container(
         width: size,
         height: size,
-        color: sbPrimary.withOpacity(0.1),
+        color: sbPrimary.withValues(alpha: 0.1),
         child: const Icon(Icons.school_outlined, color: sbPrimary, size: 30),
       );
 

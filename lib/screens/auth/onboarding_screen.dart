@@ -110,7 +110,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           decoration: BoxDecoration(
                             color: isActive
                                 ? const Color(0xFF0052CC)
-                                : const Color(0xFF0052CC).withOpacity(0.3),
+                                : const Color(0xFF0052CC).withValues(alpha: 0.3),
                             borderRadius: BorderRadius.circular(4),
                           ),
                         );

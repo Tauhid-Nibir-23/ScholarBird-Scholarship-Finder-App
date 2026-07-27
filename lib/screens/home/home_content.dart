@@ -140,7 +140,7 @@ class _HomeContentState extends State<HomeContent> {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF1A1A2E).withOpacity(0.2),
+                    color: const Color(0xFF1A1A2E).withValues(alpha: 0.2),
                     blurRadius: 12,
                     offset: const Offset(0, 6),
                   ),
@@ -292,7 +292,7 @@ class _HomeContentState extends State<HomeContent> {
                 }
 
                 final items = allData
-                    .map((doc) => doc.data() as Map<String, dynamic>)
+                    .map((doc) => doc.data()! as Map<String, dynamic>)
                     .where((s) => s.isNotEmpty)
                     .toList();
 
@@ -352,7 +352,7 @@ class _HomeContentState extends State<HomeContent> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -366,7 +366,7 @@ class _HomeContentState extends State<HomeContent> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF5B7AE8).withOpacity(0.1),
+                    color: const Color(0xFF5B7AE8).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
@@ -385,7 +385,7 @@ class _HomeContentState extends State<HomeContent> {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF5B7AE8).withOpacity(0.1),
+                  color: const Color(0xFF5B7AE8).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: ClipRRect(
@@ -475,7 +475,7 @@ class _HomeContentState extends State<HomeContent> {
           border: Border.all(color: const Color(0xFFE5E7EB)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 8,
               offset: const Offset(0, 3),
             ),
@@ -487,7 +487,7 @@ class _HomeContentState extends State<HomeContent> {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: const Color(0xFF5B7AE8).withOpacity(0.12),
+                color: const Color(0xFF5B7AE8).withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(
@@ -554,7 +554,7 @@ class _HomeContentState extends State<HomeContent> {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.12),
+            color: Colors.black.withValues(alpha: 0.12),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -566,7 +566,7 @@ class _HomeContentState extends State<HomeContent> {
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(isDarkText ? 0.7 : 0.15),
+              color: Colors.white.withValues(alpha: isDarkText ? 0.7 : 0.15),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(
@@ -619,7 +619,7 @@ class _HomeContentState extends State<HomeContent> {
                           borderRadius: BorderRadius.circular(10),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.08),
+                              color: Colors.black.withValues(alpha: 0.08),
                               blurRadius: 6,
                               offset: const Offset(0, 3),
                             ),
