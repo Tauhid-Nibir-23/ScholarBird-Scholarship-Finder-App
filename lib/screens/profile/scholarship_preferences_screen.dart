@@ -180,6 +180,8 @@ class _ScholarshipPreferencesScreenState extends State<ScholarshipPreferencesScr
         'preferredCountries': _preferredCountries.toList(),
         'preferredDegree': _preferredDegree,
         'interestedFields': _interestedFields.toList(),
+        // Reuse the existing interest selector as the user's matching skills.
+        'skills': _interestedFields.toList(),
         'fundingTypes': _fundingTypes.toList(),
         'intakes': _intakes.toList(),
         'preferencesCompleted': true,

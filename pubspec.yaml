@@ -18,6 +18,8 @@ dependencies:
   cloud_firestore: ^5.0.0
   shared_preferences: ^2.2.2
   url_launcher: ^6.3.0
+  google_generative_ai: ^0.4.7
+  flutter_dotenv: ^6.0.1
 
 dev_dependencies:
   flutter_test:
@@ -35,3 +37,4 @@ flutter:
 
   assets:
     - assets/images/
+    - .env

@@ -296,6 +296,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
         'email': email,
         'department': _selectedDepartment,
         'degree': _selectedDegree,
+        'education': _selectedDegree,
+        'cgpa': 0,
+        'country': '',
+        'skills': <String>[],
+        'subscriptionStatus': 'free',
+        'subscriptionExpiry': null,
         'freeApplicationsLeft': 3,
         'createdAt': Timestamp.now(),
       });
@@ -467,5 +473,4 @@ class CustomDropdownField extends StatelessWidget {
       ],
     );
 }
-
 

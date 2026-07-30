@@ -197,6 +197,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 				'university': _universityController.text.trim(),
 				'department': _departmentController.text.trim(),
 				'degree': _degreeController.text.trim(),
+				'education': _degreeController.text.trim(),
 				'profileCompleted': true,
 				'updatedAt': Timestamp.now(),
 			}, SetOptions(merge: true));

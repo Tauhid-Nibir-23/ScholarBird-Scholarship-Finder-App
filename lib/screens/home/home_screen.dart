@@ -3,6 +3,7 @@ import '../scholarship/scholarship_list.dart';
 import '../applications/my_applications.dart';
 import '../profile/profile_screen.dart';
 import '../profile/notifications_screen.dart';
+import '../ai_advisor/ai_advisor_screen.dart';
 import 'home_content.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -35,6 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
         },
       ),
       const ScholarshipsScreen(),
+      const AIAdvisorScreen(),
       const MyApplicationsScreen(),
       const ProfileScreen(),
     ];
@@ -101,6 +103,11 @@ class _HomeScreenState extends State<HomeScreen> {
               icon: Icon(Icons.search_outlined),
               activeIcon: Icon(Icons.search),
               label: 'Explore',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.auto_awesome_outlined),
+              activeIcon: Icon(Icons.auto_awesome),
+              label: 'AI Advisor',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.assignment_outlined),
@@ -179,7 +186,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
-
 
 
 

@@ -7,9 +7,16 @@ import 'screens/auth/login_screen.dart';
 import 'screens/auth/signup_screen.dart';
 import 'admin/admin_dashboard.dart';
 import 'screens/home/home_screen.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // GeminiService reads its key only when the advisor is used. Keeping this
+  // non-fatal lets the rest of the app run while a developer configures .env.
+  try {
+    await dotenv.load(fileName: '.env');
+  } catch (_) {}
 
   try {
     await Firebase.initializeApp(

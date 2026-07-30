@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../premium/premium_upgrade_screen.dart';
 
 class ScholarshipDetailsScreen extends StatelessWidget {
 
@@ -165,20 +166,26 @@ class ScholarshipDetailsScreen extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (!readOnly)
-                FutureBuilder<bool>(
-                  future: _hasApplied(),
+                FutureBuilder<_ApplicationAccess>(
+                  future: _applicationAccess(),
                   builder: (context, snapshot) {
                     final isLoading =
                         snapshot.connectionState == ConnectionState.waiting;
-                    final alreadyApplied = snapshot.data == true;
+                    final access = snapshot.data ?? const _ApplicationAccess();
 
                     return SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: (alreadyApplied || isLoading)
+                        onPressed: (isLoading || access.alreadyApplied)
                             ? null
                             : () {
-                                _applyScholarship(context);
+                                if (access.canApply) {
+                                  _applyScholarship(context);
+                                } else {
+                                  Navigator.of(context).push(MaterialPageRoute(
+                                    builder: (_) => const PremiumUpgradeScreen(),
+                                  ));
+                                }
                               },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF5B7AE8),
@@ -189,7 +196,11 @@ class ScholarshipDetailsScreen extends StatelessWidget {
                           elevation: 0,
                         ),
                         child: Text(
-                          alreadyApplied ? 'Applied' : 'Apply Now',
+                          access.alreadyApplied
+                              ? 'Applied'
+                              : access.canApply
+                                  ? 'Apply Now'
+                                  : 'Unlock Scholarship Applications',
                           style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
@@ -382,6 +393,24 @@ class ScholarshipDetailsScreen extends StatelessWidget {
     return doc.exists;
   }
 
+  Future<_ApplicationAccess> _applicationAccess() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return const _ApplicationAccess();
+
+    try {
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      final data = userDoc.data() ?? <String, dynamic>{};
+      final expiry = data['subscriptionExpiry'];
+      final expiryDate = expiry is Timestamp ? expiry.toDate() : expiry is DateTime ? expiry : null;
+      final isPremium = data['subscriptionStatus']?.toString() == 'premium' &&
+          (expiryDate == null || expiryDate.isAfter(DateTime.now()));
+      return _ApplicationAccess(canApply: isPremium, alreadyApplied: await _hasApplied());
+    } on FirebaseException {
+      // Failing closed prevents an application from bypassing subscription checks.
+      return const _ApplicationAccess();
+    }
+  }
+
   Future<void> _applyScholarship(BuildContext context) async {
     final user = FirebaseAuth.instance.currentUser;
 
@@ -483,4 +512,10 @@ class ScholarshipDetailsScreen extends StatelessWidget {
         .replaceAll(RegExp(r'\n\n+'), '\n')
         .trim();
   }
+}
+
+class _ApplicationAccess {
+  const _ApplicationAccess({this.canApply = false, this.alreadyApplied = false});
+  final bool canApply;
+  final bool alreadyApplied;
 }

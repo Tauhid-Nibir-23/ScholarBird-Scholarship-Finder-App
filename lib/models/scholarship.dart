@@ -1,0 +1,52 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+class Scholarship {
+  const Scholarship({
+    required this.id,
+    required this.title,
+    required this.country,
+    required this.deadline,
+    required this.field,
+    required this.minCgpa,
+    required this.eligibility,
+    required this.fundingType,
+  });
+
+  final String id;
+  final String title;
+  final String country;
+  final String deadline;
+  final String field;
+  final double? minCgpa;
+  final String eligibility;
+  final String fundingType;
+
+  factory Scholarship.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final data = doc.data() ?? <String, dynamic>{};
+    final rawCgpa = data['minCGPA'] ?? data['minCgpa'];
+    return Scholarship(
+      id: doc.id,
+      title: _text(data['title']),
+      country: _text(data['country']),
+      deadline: _text(data['deadline']),
+      field: _text(data['field']),
+      minCgpa: rawCgpa is num ? rawCgpa.toDouble() : double.tryParse(_text(rawCgpa)),
+      eligibility: _text(data['eligibility']),
+      fundingType: _text(data['fundingType']).isNotEmpty
+          ? _text(data['fundingType'])
+          : _text(data['amount']),
+    );
+  }
+
+  Map<String, dynamic> toGeminiMap() => {
+        'title': title,
+        'country': country,
+        'deadline': deadline,
+        'field': field,
+        'minCGPA': minCgpa,
+        'eligibility': eligibility,
+        'fundingType': fundingType,
+      };
+
+  static String _text(dynamic value) => value?.toString().trim() ?? '';
+}
