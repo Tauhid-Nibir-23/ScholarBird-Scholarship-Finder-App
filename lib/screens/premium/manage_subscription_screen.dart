@@ -2,4 +2,60 @@ import 'package:flutter/material.dart';
 import '../../models/subscription_model.dart';
 import '../../services/subscription_service.dart';
 import 'premium_upgrade_screen.dart';
-class ManageSubscriptionScreen extends StatelessWidget { const ManageSubscriptionScreen({super.key}); @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('Manage Subscription')),body:StreamBuilder<SubscriptionModel>(stream:SubscriptionService().watch(),builder:(context,s){if(s.connectionState==ConnectionState.waiting)return const Center(child:CircularProgressIndicator());if(s.hasError)return const Center(child:Text('Unable to load membership details.'));final x=s.data??const SubscriptionModel(status:'free');if(!x.isPremium)return Center(child:ElevatedButton(onPressed:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const PremiumUpgradeScreen())),child:const Text('Upgrade to Premium')));return ListView(padding:const EdgeInsets.all(20),children:[_card('Current Plan',x.plan??'Premium'),_card('Membership Status','Premium Active'),_card('Subscription Start Date',_date(x.start)),_card('Expiry Date',_date(x.expiry)),_card('Remaining Days','${x.daysRemaining}'),_card('Payment Method',x.gateway??'Not available'),const SizedBox(height:16),const Text('Membership Benefits',style:TextStyle(fontSize:18,fontWeight:FontWeight.w700)),...['Unlimited Scholarship Applications','Priority Scholarship Notifications','Advanced Application Tracking','Exclusive Premium Scholarships','Priority Customer Support'].map((v)=>ListTile(leading:const Icon(Icons.check_circle,color:Color(0xFF5B7AE8)),title:Text(v))),const ListTile(title:Text('Payment History'),subtitle:Text('No payment history available.'),leading:Icon(Icons.receipt_long_outlined))]);}));Widget _card(String title,String value)=>Card(child:ListTile(title:Text(title),trailing:Text(value)));String _date(DateTime? d)=>d==null?'Not available':'${d.day}/${d.month}/${d.year}';}
+
+class ManageSubscriptionScreen extends StatelessWidget {
+  const ManageSubscriptionScreen({super.key});
+  @override
+  Widget build(BuildContext context) => Scaffold(
+      appBar: AppBar(title: const Text('Manage Subscription')),
+      body: StreamBuilder<SubscriptionModel>(
+          stream: SubscriptionService().watch(),
+          builder: (context, s) {
+            if (s.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (s.hasError) {
+              return const Center(
+                  child: Text('Unable to load membership details.'));
+            }
+            final x = s.data ?? const SubscriptionModel(status: 'free');
+            if (!x.isPremium) {
+              return Center(
+                  child: ElevatedButton(
+                      onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const PremiumUpgradeScreen())),
+                      child: const Text('Upgrade to Premium')));
+            }
+            return ListView(padding: const EdgeInsets.all(20), children: [
+              _card('Current Plan', x.plan ?? 'Premium'),
+              _card('Membership Status', 'Premium Active'),
+              _card('Subscription Start Date', _date(x.start)),
+              _card('Expiry Date', _date(x.expiry)),
+              _card('Remaining Days', '${x.daysRemaining}'),
+              _card('Payment Method', x.gateway ?? 'Not available'),
+              const SizedBox(height: 16),
+              const Text('Membership Benefits',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+              ...[
+                'Unlimited Scholarship Applications',
+                'Priority Scholarship Notifications',
+                'Advanced Application Tracking',
+                'Exclusive Premium Scholarships',
+                'Priority Customer Support'
+              ].map((v) => ListTile(
+                  leading:
+                      const Icon(Icons.check_circle, color: Color(0xFF5B7AE8)),
+                  title: Text(v))),
+              const ListTile(
+                  title: Text('Payment History'),
+                  subtitle: Text('No payment history available.'),
+                  leading: Icon(Icons.receipt_long_outlined))
+            ]);
+          }));
+  Widget _card(String title, String value) =>
+      Card(child: ListTile(title: Text(title), trailing: Text(value)));
+  String _date(DateTime? d) =>
+      d == null ? 'Not available' : '${d.day}/${d.month}/${d.year}';
+}

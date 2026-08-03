@@ -40,14 +40,16 @@ class GeminiService {
     for (final model in models) {
       for (var attempt = 0; attempt < 2; attempt++) {
         try {
-          final response = await model.generateContent([Content.text(_prompt(user, scholarships))]);
+          final response = await model
+              .generateContent([Content.text(_prompt(user, scholarships))]);
           return _parseRecommendations(response.text);
         } on GenerativeAIException catch (error) {
           lastError = error;
           if (!_isTemporaryUnavailable(error) || attempt == 1) break;
           await Future<void>.delayed(Duration(seconds: attempt + 1));
         } on FormatException {
-          throw const GeminiRequestException('Gemini returned an unreadable recommendation response.');
+          throw const GeminiRequestException(
+              'Gemini returned an unreadable recommendation response.');
         }
       }
     }
@@ -62,15 +64,19 @@ class GeminiService {
     );
   }
 
-  GenerativeModel _createModel(String modelName, String apiKey) => GenerativeModel(
+  GenerativeModel _createModel(String modelName, String apiKey) =>
+      GenerativeModel(
         model: modelName,
         apiKey: apiKey,
-        generationConfig: GenerationConfig(responseMimeType: 'application/json'),
+        generationConfig:
+            GenerationConfig(responseMimeType: 'application/json'),
       );
 
   bool _isTemporaryUnavailable(GenerativeAIException error) {
     final message = error.message.toLowerCase();
-    return message.contains('503') || message.contains('unavailable') || message.contains('high demand');
+    return message.contains('503') ||
+        message.contains('unavailable') ||
+        message.contains('high demand');
   }
 
   String _prompt(UserProfile user, List<Scholarship> scholarships) => '''
@@ -78,13 +84,13 @@ You are ScholarBird's scholarship advisor. Select the top five matching entries 
 
 APPLICANT PROFILE:
 ${jsonEncode({
-      'degree': user.degree,
-      'cgpa': user.cgpa,
-      'country': user.country,
-      'skills': user.skills,
-      'preferredStudyCountries': user.preferredStudyCountries,
-      'academicBackground': user.academicBackground,
-    })}
+            'degree': user.degree,
+            'cgpa': user.cgpa,
+            'country': user.country,
+            'skills': user.skills,
+            'preferredStudyCountries': user.preferredStudyCountries,
+            'academicBackground': user.academicBackground,
+          })}
 
 SCHOLARSHIPS:
 ${jsonEncode(scholarships.map((item) => item.toGeminiMap()).toList())}
@@ -104,9 +110,12 @@ Return JSON only: an array of at most five objects. Every object must have exact
     if (decoded is! List) throw const FormatException('Expected a JSON array.');
     return decoded
         .whereType<Map>()
-        .map((item) => ScholarshipRecommendation.fromJson(Map<String, dynamic>.from(item)))
+        .map((item) =>
+            ScholarshipRecommendation.fromJson(Map<String, dynamic>.from(item)))
         .where((item) =>
-            item.scholarshipName.isNotEmpty && item.matchProbability.isNotEmpty && item.reason.isNotEmpty)
+            item.scholarshipName.isNotEmpty &&
+            item.matchProbability.isNotEmpty &&
+            item.reason.isNotEmpty)
         .take(5)
         .toList();
   }

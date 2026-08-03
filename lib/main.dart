@@ -38,20 +38,20 @@ class ScholarBirdApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'ScholarBird',
-      theme: ScholarBirdTheme.light(),
+        debugShowCheckedModeBanner: false,
+        title: 'ScholarBird',
+        theme: ScholarBirdTheme.light(),
 
-      // Start app from splash screen
-      initialRoute: '/splash',
+        // Start app from splash screen
+        initialRoute: '/splash',
 
-      routes: {
-        '/splash': (context) => const SplashScreen(),
-        '/onboarding': (context) => const OnboardingScreen(),
-        '/login': (context) => const LoginScreen(),
-        '/signup': (context) => const SignUpScreen(),
-        '/home': (context) => const HomeScreen(),
-        '/admin': (context) => const AdminDashboard(),
-      },
-    );
+        routes: {
+          '/splash': (context) => const SplashScreen(),
+          '/onboarding': (context) => const OnboardingScreen(),
+          '/login': (context) => const LoginScreen(),
+          '/signup': (context) => const SignUpScreen(),
+          '/home': (context) => const HomeScreen(),
+          '/admin': (context) => const AdminDashboard(),
+        },
+      );
 }

@@ -7,10 +7,12 @@ class ScholarshipPreferencesScreen extends StatefulWidget {
   const ScholarshipPreferencesScreen({super.key});
 
   @override
-  State<ScholarshipPreferencesScreen> createState() => _ScholarshipPreferencesScreenState();
+  State<ScholarshipPreferencesScreen> createState() =>
+      _ScholarshipPreferencesScreenState();
 }
 
-class _ScholarshipPreferencesScreenState extends State<ScholarshipPreferencesScreen> {
+class _ScholarshipPreferencesScreenState
+    extends State<ScholarshipPreferencesScreen> {
   final Set<String> _preferredCountries = {};
   final Set<String> _interestedFields = {};
   final Set<String> _fundingTypes = {};
@@ -56,7 +58,13 @@ class _ScholarshipPreferencesScreenState extends State<ScholarshipPreferencesScr
     'UK',
     'USA',
   ];
-  final List<String> _degrees = ['Undergraduate', 'Masters', 'PhD', 'Research', 'Exchange'];
+  final List<String> _degrees = [
+    'Undergraduate',
+    'Masters',
+    'PhD',
+    'Research',
+    'Exchange'
+  ];
   final List<String> _fundingTypeOptions = [
     'Fully Funded',
     'Partial Funded',
@@ -105,14 +113,19 @@ class _ScholarshipPreferencesScreenState extends State<ScholarshipPreferencesScr
     }
 
     try {
-      final snapshot =
-          await FirebaseFirestore.instance.collection('users').doc(currentUser.uid).get();
+      final snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .get();
 
       final data = snapshot.data();
       if (data != null) {
-        final countries = (data['preferredCountries'] as List?)?.cast<String>() ?? [];
-        final fields = (data['interestedFields'] as List?)?.cast<String>() ?? [];
-        final fundingTypes = (data['fundingTypes'] as List?)?.cast<String>() ?? [];
+        final countries =
+            (data['preferredCountries'] as List?)?.cast<String>() ?? [];
+        final fields =
+            (data['interestedFields'] as List?)?.cast<String>() ?? [];
+        final fundingTypes =
+            (data['fundingTypes'] as List?)?.cast<String>() ?? [];
         final intakes = (data['intakes'] as List?)?.cast<String>() ?? [];
         _preferredCountries
           ..clear()
@@ -232,7 +245,8 @@ class _ScholarshipPreferencesScreenState extends State<ScholarshipPreferencesScr
             ? const Center(child: CircularProgressIndicator(color: sbPrimary))
             : SafeArea(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -268,7 +282,8 @@ class _ScholarshipPreferencesScreenState extends State<ScholarshipPreferencesScr
                         value: _preferredDegree,
                         items: _degrees,
                         prefixIcon: Icons.school_outlined,
-                        onChanged: (value) => setState(() => _preferredDegree = value),
+                        onChanged: (value) =>
+                            setState(() => _preferredDegree = value),
                       ),
                       const SizedBox(height: 24),
                       _buildMultiSelectField(
@@ -437,8 +452,8 @@ class _ScholarshipPreferencesScreenState extends State<ScholarshipPreferencesScr
                       prefixIcon: const Icon(Icons.search, color: sbPrimary),
                       filled: true,
                       fillColor: sbBackground,
-                      contentPadding:
-                          const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                      contentPadding: const EdgeInsets.symmetric(
+                          vertical: 12, horizontal: 12),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
@@ -450,7 +465,8 @@ class _ScholarshipPreferencesScreenState extends State<ScholarshipPreferencesScr
                     child: ListView.separated(
                       shrinkWrap: true,
                       itemCount: filtered.length,
-                      separatorBuilder: (_, __) => const Divider(height: 1, color: sbBorder),
+                      separatorBuilder: (_, __) =>
+                          const Divider(height: 1, color: sbBorder),
                       itemBuilder: (context, index) {
                         final item = filtered[index];
                         final isSelected = localSelected.contains(item);

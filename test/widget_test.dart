@@ -42,4 +42,3 @@ void main() {
     expect(find.text('Sign Up'), findsOneWidget);
   });
 }
-

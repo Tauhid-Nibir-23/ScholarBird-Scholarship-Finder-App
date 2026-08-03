@@ -77,7 +77,8 @@ class MyApplicationsScreen extends StatelessWidget {
                 }
 
                 return ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                   itemCount: docs.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
@@ -165,8 +166,8 @@ class MyApplicationsScreen extends StatelessWidget {
                         ),
                       ),
                       Container(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
                           color: badgeColor.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(8),
@@ -185,7 +186,8 @@ class MyApplicationsScreen extends StatelessWidget {
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      const Icon(Icons.public, size: 14, color: sbSecondaryText),
+                      const Icon(Icons.public,
+                          size: 14, color: sbSecondaryText),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
@@ -247,8 +249,8 @@ class MyApplicationsScreen extends StatelessWidget {
                     child: TextButton(
                       onPressed: onViewDetails,
                       style: TextButton.styleFrom(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
                         backgroundColor: sbPrimary.withValues(alpha: 0.08),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),

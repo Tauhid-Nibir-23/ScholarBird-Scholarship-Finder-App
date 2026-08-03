@@ -10,9 +10,10 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin { //Animation controller needs a TickerProvider, which is provided by SingleTickerProviderStateMixin
+    with SingleTickerProviderStateMixin {
+  //Animation controller needs a TickerProvider, which is provided by SingleTickerProviderStateMixin
   late AnimationController _fadeController;
-  late Animation<double> _fadeAnimation;  //fadein animation for logo and text
+  late Animation<double> _fadeAnimation; //fadein animation for logo and text
 
   @override
   void initState() {
@@ -58,95 +59,95 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0052CC), // Light blue
-              Color(0xFF80B3FF), // Lighter blue
-              Colors.white,
-            ],
-          ),
-        ),
-        child: Center(
-          child: FadeTransition(
-            opacity: _fadeAnimation,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Logo
-                Container(
-                  width: 140,
-                  height: 140,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(30),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.15),
-                        blurRadius: 25,
-                        spreadRadius: 8,
-                      ),
-                    ],
-                  ),
-                  child: Image.asset(
-                    'assets/images/Logo_ScholarBird.png',
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      // Fallback icon if logo not found
-                      return Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white.withValues(alpha: 0.95),
-                        ),
-                        child: const Icon(
-                          Icons.school,
-                          size: 60,
-                          color: Color(0xFF0052CC),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(height: 40),
-                // App Name
-                const Text(
-                  'ScholarBird',
-                  style: TextStyle(
-                    fontSize: 42,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    letterSpacing: 1.5,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-                // Tagline
-                const Text(
-                  'Fly Towards Your Future',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white,
-                    fontWeight: FontWeight.w300,
-                    letterSpacing: 0.8,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 60),
-                // Loading indicator
-                const SizedBox(
-                  width: 50,
-                  height: 50,
-                  child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    strokeWidth: 2,
-                  ),
-                ),
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF0052CC), // Light blue
+                Color(0xFF80B3FF), // Lighter blue
+                Colors.white,
               ],
             ),
           ),
+          child: Center(
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Logo
+                  Container(
+                    width: 140,
+                    height: 140,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(30),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.15),
+                          blurRadius: 25,
+                          spreadRadius: 8,
+                        ),
+                      ],
+                    ),
+                    child: Image.asset(
+                      'assets/images/Logo_ScholarBird.png',
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        // Fallback icon if logo not found
+                        return Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withValues(alpha: 0.95),
+                          ),
+                          child: const Icon(
+                            Icons.school,
+                            size: 60,
+                            color: Color(0xFF0052CC),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                  // App Name
+                  const Text(
+                    'ScholarBird',
+                    style: TextStyle(
+                      fontSize: 42,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 1.5,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  // Tagline
+                  const Text(
+                    'Fly Towards Your Future',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w300,
+                      letterSpacing: 0.8,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 60),
+                  // Loading indicator
+                  const SizedBox(
+                    width: 50,
+                    height: 50,
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      strokeWidth: 2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
-      ),
-    );
+      );
 }

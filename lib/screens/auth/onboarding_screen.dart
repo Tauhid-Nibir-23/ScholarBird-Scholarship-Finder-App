@@ -13,33 +13,32 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   int _currentPage = 0;
 
   final List<OnboardingPage> _pages = [
-  OnboardingPage(
-    title: 'Discover Scholarships',
-    description:
-        'Find the best scholarships tailored for your academic journey',
-    illustration: Image.asset(
-      'assets/images/onboarding1.png',
-      height: 220,
+    OnboardingPage(
+      title: 'Discover Scholarships',
+      description:
+          'Find the best scholarships tailored for your academic journey',
+      illustration: Image.asset(
+        'assets/images/onboarding1.png',
+        height: 220,
+      ),
     ),
-  ),
-  OnboardingPage(
-    title: 'Track Applications',
-    description: 'Keep track of your application progress in one place',
-    illustration: Image.asset(
-      'assets/images/onboarding2.png',
-      height: 220,
+    OnboardingPage(
+      title: 'Track Applications',
+      description: 'Keep track of your application progress in one place',
+      illustration: Image.asset(
+        'assets/images/onboarding2.png',
+        height: 220,
+      ),
     ),
-  ),
-  OnboardingPage(
-    title: 'Smart Filtering',
-    description:
-        'Easily filter scholarships by field, country, and degree',
-    illustration: Image.asset(
-      'assets/images/onboarding3.png',
-      height: 220,
+    OnboardingPage(
+      title: 'Smart Filtering',
+      description: 'Easily filter scholarships by field, country, and degree',
+      illustration: Image.asset(
+        'assets/images/onboarding3.png',
+        height: 220,
+      ),
     ),
-  ),
-];
+  ];
 
   @override
   void initState() {
@@ -110,7 +109,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           decoration: BoxDecoration(
                             color: isActive
                                 ? const Color(0xFF0052CC)
-                                : const Color(0xFF0052CC).withValues(alpha: 0.3),
+                                : const Color(0xFF0052CC)
+                                    .withValues(alpha: 0.3),
                             borderRadius: BorderRadius.circular(4),
                           ),
                         );
@@ -151,39 +151,39 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       );
 
   Widget _buildPage(BuildContext context, OnboardingPage page) => Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Illustration
-          page.illustration,
-          const SizedBox(height: 48),
-          // Title
-          Text(
-            page.title,
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-              height: 1.3,
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Illustration
+            page.illustration,
+            const SizedBox(height: 48),
+            // Title
+            Text(
+              page.title,
+              style: const TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+                height: 1.3,
+              ),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          // Description
-          Text(
-            page.description,
-            style: const TextStyle(
-              fontSize: 16,
-              color: Color(0xFF666666),
-              height: 1.5,
-              fontWeight: FontWeight.w500,
+            const SizedBox(height: 16),
+            // Description
+            Text(
+              page.description,
+              style: const TextStyle(
+                fontSize: 16,
+                color: Color(0xFF666666),
+                height: 1.5,
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
+          ],
+        ),
+      );
 }
 
 class TrackingIconPainter extends CustomPainter {
@@ -217,7 +217,6 @@ class TrackingIconPainter extends CustomPainter {
 }
 
 class OnboardingPage {
-
   OnboardingPage({
     required this.title,
     required this.description,

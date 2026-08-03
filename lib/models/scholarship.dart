@@ -12,16 +12,8 @@ class Scholarship {
     required this.fundingType,
   });
 
-  final String id;
-  final String title;
-  final String country;
-  final String deadline;
-  final String field;
-  final double? minCgpa;
-  final String eligibility;
-  final String fundingType;
-
-  factory Scholarship.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+  factory Scholarship.fromFirestore(
+      DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? <String, dynamic>{};
     final rawCgpa = data['minCGPA'] ?? data['minCgpa'];
     return Scholarship(
@@ -30,13 +22,23 @@ class Scholarship {
       country: _text(data['country']),
       deadline: _text(data['deadline']),
       field: _text(data['field']),
-      minCgpa: rawCgpa is num ? rawCgpa.toDouble() : double.tryParse(_text(rawCgpa)),
+      minCgpa:
+          rawCgpa is num ? rawCgpa.toDouble() : double.tryParse(_text(rawCgpa)),
       eligibility: _text(data['eligibility']),
       fundingType: _text(data['fundingType']).isNotEmpty
           ? _text(data['fundingType'])
           : _text(data['amount']),
     );
   }
+
+  final String id;
+  final String title;
+  final String country;
+  final String deadline;
+  final String field;
+  final double? minCgpa;
+  final String eligibility;
+  final String fundingType;
 
   Map<String, dynamic> toGeminiMap() => {
         'title': title,

@@ -41,439 +41,456 @@ class _HomeContentState extends State<HomeContent> {
 
   @override
   Widget build(BuildContext context) => SingleChildScrollView(
-      controller: _scrollController,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Welcome Section
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Welcome, ${_getUserName()}',
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1A1A2E),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Ready to continue your journey?',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                    color: Color(0xFF6B7A95),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Promo Banners
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: SizedBox(
-              height: 140,
-              child: Listener(
-                onPointerSignal: (event) {
-                  if (event is PointerScrollEvent) {
-                    final current = _scrollController.position.pixels;
-                    final target = current + event.scrollDelta.dy;
-                    final min = _scrollController.position.minScrollExtent;
-                    final max = _scrollController.position.maxScrollExtent;
-                    _scrollController.jumpTo(target.clamp(min, max));
-                  }
-                },
-                child: ScrollConfiguration(
-                  behavior: ScrollConfiguration.of(context).copyWith(
-                    dragDevices: const {
-                      PointerDeviceKind.touch,
-                      PointerDeviceKind.mouse,
-                      PointerDeviceKind.trackpad,
-                    },
-                  ),
-                  child: PageView(
-                    controller: _bannerController,
-                    physics: const BouncingScrollPhysics(),
-                    children: [
-                      StreamBuilder(
-                        stream: SubscriptionService().watch(),
-                        builder: (context, snapshot) {
-                          final subscription = snapshot.data;
-                          if (subscription == null) return const SizedBox();
-                          return PremiumBanner(
-                            subscription: subscription,
-                            onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                              builder: (_) => subscription.isPremium
-                                  ? const ManageSubscriptionScreen()
-                                  : const PremiumUpgradeScreen(),
-                            )),
-                          );
-                        },
-                      ),
-                      _buildPromoBanner(
-                        context,
-                        title: 'Free Scholarship Guide!',
-                        subtitle:
-                            'Download our ultimate guide to win Erasmus Mundus in 2026. Step-by-step strategy for success.',
-                        buttonText: 'Download Guide',
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF93C5FD), Color(0xFFFDE68A)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        icon: Icons.menu_book_outlined,
-                        isDarkText: true,
-                        onTap: () async {
-                          try {
-                            await PdfService.downloadUserGuide();
-                            if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('ScholarBird User Guide downloaded successfully.')));
-                          } catch (_) {
-                            if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Unable to generate the User Guide. Please try again.')));
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          // Find New Opportunities Section
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1A1A2E),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF1A1A2E).withValues(alpha: 0.2),
-                    blurRadius: 12,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
+        controller: _scrollController,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Welcome Section
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Text(
+                    'Welcome, ${_getUserName()}',
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1A1A2E),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
                   const Text(
-                    'Find new opportunities',
+                    'Ready to continue your journey?',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                      color: Color(0xFF6B7A95),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Promo Banners
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: SizedBox(
+                height: 140,
+                child: Listener(
+                  onPointerSignal: (event) {
+                    if (event is PointerScrollEvent) {
+                      final current = _scrollController.position.pixels;
+                      final target = current + event.scrollDelta.dy;
+                      final min = _scrollController.position.minScrollExtent;
+                      final max = _scrollController.position.maxScrollExtent;
+                      _scrollController.jumpTo(target.clamp(min, max));
+                    }
+                  },
+                  child: ScrollConfiguration(
+                    behavior: ScrollConfiguration.of(context).copyWith(
+                      dragDevices: const {
+                        PointerDeviceKind.touch,
+                        PointerDeviceKind.mouse,
+                        PointerDeviceKind.trackpad,
+                      },
+                    ),
+                    child: PageView(
+                      controller: _bannerController,
+                      physics: const BouncingScrollPhysics(),
+                      children: [
+                        StreamBuilder(
+                          stream: SubscriptionService().watch(),
+                          builder: (context, snapshot) {
+                            final subscription = snapshot.data;
+                            if (subscription == null) return const SizedBox();
+                            return PremiumBanner(
+                              subscription: subscription,
+                              onTap: () =>
+                                  Navigator.of(context).push(MaterialPageRoute(
+                                builder: (_) => subscription.isPremium
+                                    ? const ManageSubscriptionScreen()
+                                    : const PremiumUpgradeScreen(),
+                              )),
+                            );
+                          },
+                        ),
+                        _buildPromoBanner(
+                          context,
+                          title: 'Free Scholarship Guide!',
+                          subtitle:
+                              'Download our ultimate guide to win Erasmus Mundus in 2026. Step-by-step strategy for success.',
+                          buttonText: 'Download Guide',
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF93C5FD), Color(0xFFFDE68A)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          icon: Icons.menu_book_outlined,
+                          isDarkText: true,
+                          onTap: () async {
+                            try {
+                              await PdfService.downloadUserGuide();
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content: Text(
+                                            'ScholarBird User Guide downloaded successfully.')));
+                              }
+                            } catch (_) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content: Text(
+                                            'Unable to generate the User Guide. Please try again.')));
+                              }
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Find New Opportunities Section
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1A1A2E),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF1A1A2E).withValues(alpha: 0.2),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Find new opportunities',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    StreamBuilder<QuerySnapshot>(
+                      stream: FirebaseFirestore.instance
+                          .collection('scholarships')
+                          .snapshots(),
+                      builder: (context, snapshot) {
+                        final count = snapshot.data?.docs.length ?? 0;
+                        final label = count == 1
+                            ? '1 scholarship matches your profile'
+                            : '$count scholarships match your profile';
+                        return Text(
+                          label,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w400,
+                            color: Color(0xFFB4B9C8),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: widget.onExploreTap,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF5B7AE8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        'Browse All',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Quick Stats
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _buildQuickStatCard(
+                      label: 'Applied',
+                      stream: _userCollectionStream('applications'),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const MyApplicationsScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildQuickStatCard(
+                      label: 'Saved',
+                      stream: _userCollectionStream('savedScholarships'),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const SavedScholarshipsScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Trending Scholarships Section
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Trending Scholarships',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: Color(0xFF1A1A2E),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  StreamBuilder<QuerySnapshot>(
-                    stream: FirebaseFirestore.instance
-                        .collection('scholarships')
-                        .snapshots(),
-                    builder: (context, snapshot) {
-                      final count = snapshot.data?.docs.length ?? 0;
-                      final label = count == 1
-                          ? '1 scholarship matches your profile'
-                          : '$count scholarships match your profile';
-                      return Text(
-                        label,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w400,
-                          color: Color(0xFFB4B9C8),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
+                  TextButton(
                     onPressed: widget.onExploreTap,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF5B7AE8),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
                     child: const Text(
-                      'Browse All',
+                      'See all',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                        color: Color(0xFF5B7AE8),
                       ),
                     ),
                   ),
                 ],
               ),
             ),
-          ),
 
-          const SizedBox(height: 24),
+            // Scholarships Carousel
+            SizedBox(
+              // Each card includes a badge, image, save control, and deadline.
+              // Keep enough vertical room for the full card on compact screens.
+              height: 224,
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('scholarships')
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  final allData = snapshot.data?.docs ?? [];
+                  if (snapshot.hasError) {
+                    return const Center(
+                        child: Text('Unable to load scholarships'));
+                  }
+                  if (snapshot.connectionState == ConnectionState.waiting &&
+                      allData.isEmpty) {
+                    return const Center(
+                      child:
+                          CircularProgressIndicator(color: Color(0xFF5B7AE8)),
+                    );
+                  }
+                  if (allData.isEmpty) {
+                    return const Center(child: Text('No scholarships found'));
+                  }
 
-          // Quick Stats
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _buildQuickStatCard(
-                    label: 'Applied',
-                    stream: _userCollectionStream('applications'),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const MyApplicationsScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildQuickStatCard(
-                    label: 'Saved',
-                    stream: _userCollectionStream('savedScholarships'),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const SavedScholarshipsScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Trending Scholarships Section
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Trending Scholarships',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1A1A2E),
-                  ),
-                ),
-                TextButton(
-                  onPressed: widget.onExploreTap,
-                  child: const Text(
-                    'See all',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF5B7AE8),
+                  final items = allData
+                      .map((doc) => <String, dynamic>{
+                            ...doc.data()! as Map<String, dynamic>,
+                            'id': doc.id,
+                          })
+                      .where((s) => s.isNotEmpty)
+                      .toList();
+
+                  items.sort((a, b) {
+                    final aDate = _parseDeadline(a['deadline']);
+                    final bDate = _parseDeadline(b['deadline']);
+                    if (aDate == null && bDate == null) return 0;
+                    if (aDate == null) return 1;
+                    if (bDate == null) return -1;
+                    return aDate.compareTo(bDate);
+                  });
+
+                  final topThree = items.take(3).toList();
+                  return ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    itemBuilder: (context, index) => _buildScholarshipCard(
+                      context,
+                      topThree[index],
                     ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Scholarships Carousel
-          SizedBox(
-            // Each card includes a badge, image, save control, and deadline.
-            // Keep enough vertical room for the full card on compact screens.
-            height: 224,
-            child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance.collection('scholarships').snapshots(),
-              builder: (context, snapshot) {
-                final allData = snapshot.data?.docs ?? [];
-                if (snapshot.hasError) {
-                  return const Center(child: Text('Unable to load scholarships'));
-                }
-                if (snapshot.connectionState == ConnectionState.waiting && allData.isEmpty) {
-                  return const Center(
-                    child: CircularProgressIndicator(color: Color(0xFF5B7AE8)),
+                    separatorBuilder: (_, __) => const SizedBox(width: 12),
+                    itemCount: topThree.length,
                   );
-                }
-                if (allData.isEmpty) {
-                  return const Center(child: Text('No scholarships found'));
-                }
-
-                final items = allData
-                    .map((doc) => <String, dynamic>{
-                          ...doc.data()! as Map<String, dynamic>,
-                          'id': doc.id,
-                        })
-                    .where((s) => s.isNotEmpty)
-                    .toList();
-
-                items.sort((a, b) {
-                  final aDate = _parseDeadline(a['deadline']);
-                  final bDate = _parseDeadline(b['deadline']);
-                  if (aDate == null && bDate == null) return 0;
-                  if (aDate == null) return 1;
-                  if (bDate == null) return -1;
-                  return aDate.compareTo(bDate);
-                });
-
-                final topThree = items.take(3).toList();
-                return ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  itemBuilder: (context, index) => _buildScholarshipCard(
-                    context,
-                    topThree[index],
-                  ),
-                  separatorBuilder: (_, __) => const SizedBox(width: 12),
-                  itemCount: topThree.length,
-                );
-              },
+                },
+              ),
             ),
-          ),
 
-          const SizedBox(height: 30),
-        ],
-      ),
-    );
+            const SizedBox(height: 30),
+          ],
+        ),
+      );
 
   Widget _buildScholarshipCard(BuildContext context, Map<String, dynamic> s) {
     final title = (s['title'] ?? '').toString();
     final location = (s['country'] ?? '').toString();
     final deadline = (s['deadline'] ?? '').toString();
-    final badgeValue = (s['fundingType'] ?? s['amount'] ?? '').toString().trim();
+    final badgeValue =
+        (s['fundingType'] ?? s['amount'] ?? '').toString().trim();
     final imageUrl = (s['image'] ?? '').toString();
 
     return GestureDetector(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ScholarshipDetailsScreen(data: s),
-            ),
-          );
-        },
-        child: Container(
-          width: 160,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: const Color(0xFFE5E7EB),
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ScholarshipDetailsScreen(data: s),
           ),
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (badgeValue.isNotEmpty) ...[
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF5B7AE8).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    badgeValue,
-                    style: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF5B7AE8),
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-              ],
+        );
+      },
+      child: Container(
+        width: 160,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: const Color(0xFFE5E7EB),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (badgeValue.isNotEmpty) ...[
               Container(
-                width: 36,
-                height: 36,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: const Color(0xFF5B7AE8).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(4),
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: imageUrl.isEmpty
-                      ? const Icon(
+                child: Text(
+                  badgeValue,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF5B7AE8),
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: const Color(0xFF5B7AE8).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: imageUrl.isEmpty
+                    ? const Icon(
+                        Icons.school_outlined,
+                        color: Color(0xFF5B7AE8),
+                        size: 20,
+                      )
+                    : Image.network(
+                        imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(
                           Icons.school_outlined,
                           color: Color(0xFF5B7AE8),
                           size: 20,
-                        )
-                      : Image.network(
-                          imageUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Icon(
-                            Icons.school_outlined,
-                            color: Color(0xFF5B7AE8),
-                            size: 20,
-                          ),
                         ),
-                ),
+                      ),
               ),
-                const SizedBox(height: 6),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: SavedScholarshipIconButton(
-                    scholarship: s,
-                    iconSize: 18,
-                  ),
-                ),
-              const SizedBox(height: 8),
-              Text(
-                title.isEmpty ? 'Untitled scholarship' : title,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF1A1A2E),
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 6),
+            Align(
+              alignment: Alignment.centerRight,
+              child: SavedScholarshipIconButton(
+                scholarship: s,
+                iconSize: 18,
               ),
-              const SizedBox(height: 4),
-              Text(
-                location.isEmpty ? 'N/A' : location,
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w400,
-                  color: Color(0xFF9CA3AF),
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              title.isEmpty ? 'Untitled scholarship' : title,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF1A1A2E),
               ),
-              const SizedBox(height: 4),
-              Text(
-                'Deadline: ${deadline.isEmpty ? 'N/A' : deadline}',
-                style: const TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w400,
-                  color: Color(0xFF9CA3AF),
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              location.isEmpty ? 'N/A' : location,
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFF9CA3AF),
               ),
-            ],
-          ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Deadline: ${deadline.isEmpty ? 'N/A' : deadline}',
+              style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFF9CA3AF),
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ),
-      );
+      ),
+    );
   }
 
   Stream<QuerySnapshot<Map<String, dynamic>>> _userCollectionStream(
@@ -494,72 +511,73 @@ class _HomeContentState extends State<HomeContent> {
     required String label,
     required Stream<QuerySnapshot<Map<String, dynamic>>> stream,
     required VoidCallback onTap,
-  }) => GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: const Color(0xFF5B7AE8).withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(10),
+  }) =>
+      GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFE5E7EB)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
               ),
-              child: const Icon(
-                Icons.bookmark_border,
-                color: Color(0xFF5B7AE8),
-                size: 20,
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF5B7AE8).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.bookmark_border,
+                  color: Color(0xFF5B7AE8),
+                  size: 20,
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                stream: stream,
-                builder: (context, snapshot) {
-                  final count = snapshot.data?.docs.length ?? 0;
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        label,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF6B7A95),
+              const SizedBox(width: 12),
+              Expanded(
+                child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                  stream: stream,
+                  builder: (context, snapshot) {
+                    final count = snapshot.data?.docs.length ?? 0;
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          label,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF6B7A95),
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        count.toString(),
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF1A1A2E),
+                        const SizedBox(height: 4),
+                        Text(
+                          count.toString(),
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1A1A2E),
+                          ),
                         ),
-                      ),
-                    ],
-                  );
-                },
+                      ],
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-    );
+      );
   Widget _buildPromoBanner(
     BuildContext context, {
     required String title,
@@ -638,13 +656,15 @@ class _HomeContentState extends State<HomeContent> {
                     borderRadius: BorderRadius.circular(10),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(10),
-                      onTap: onTap ?? () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Coming Soon...')),
-                        );
-                      },
+                      onTap: onTap ??
+                          () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Coming Soon...')),
+                            );
+                          },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 8),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(10),
                           boxShadow: [

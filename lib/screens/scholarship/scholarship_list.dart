@@ -120,12 +120,23 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
       // The upload pipeline supplies search_tokens. Fall back to the existing
       // document fields so older Firestore records remain searchable too.
       final searchableValues = [
-        scholarship['title'], scholarship['university'], scholarship['country'],
-        scholarship['field'], scholarship['provider'], scholarship['description'],
-        scholarship['keywords'], scholarship['tags'], scholarship['search_tokens'],
+        scholarship['title'],
+        scholarship['university'],
+        scholarship['country'],
+        scholarship['field'],
+        scholarship['provider'],
+        scholarship['description'],
+        scholarship['keywords'],
+        scholarship['tags'],
+        scholarship['search_tokens'],
       ];
-      final haystack = searchableValues.whereType<Object?>().expand((value) => value is Iterable
-          ? value.map((item) => item.toString()) : [value.toString()]).join(' ').toLowerCase();
+      final haystack = searchableValues
+          .whereType<Object?>()
+          .expand((value) => value is Iterable
+              ? value.map((item) => item.toString())
+              : [value.toString()])
+          .join(' ')
+          .toLowerCase();
       if (!_searchQuery.split(RegExp(r'\s+')).every(haystack.contains)) {
         return false;
       }
@@ -153,13 +164,31 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
     }
 
     if (!_matchesText(scholarship, 'funding', _selectedFunding,
-        fallbacks: const ['fundingType', 'amount'])) return false;
-    if (!_matchesBoolean(scholarship, 'ieltsRequired', _selectedIelts)) return false;
-    if (!_matchesBoolean(scholarship, 'englishMediumAccepted', _selectedEnglishMedium)) return false;
-    if (!_matchesBoolean(scholarship, 'researchRequired', _selectedResearch)) return false;
-    if (_maximumMinCgpa != null && _number(scholarship['minCGPA'] ?? scholarship['minCgpa']) > _maximumMinCgpa!) return false;
-    if (_maximumBacklogs != null && _number(scholarship['maxBacklogs']).round() > _maximumBacklogs!) return false;
-    if (_selectedDeadline.isNotEmpty && !_matchesDeadline(scholarship)) return false;
+        fallbacks: const ['fundingType', 'amount'])) {
+      return false;
+    }
+    if (!_matchesBoolean(scholarship, 'ieltsRequired', _selectedIelts)) {
+      return false;
+    }
+    if (!_matchesBoolean(
+        scholarship, 'englishMediumAccepted', _selectedEnglishMedium)) {
+      return false;
+    }
+    if (!_matchesBoolean(scholarship, 'researchRequired', _selectedResearch)) {
+      return false;
+    }
+    if (_maximumMinCgpa != null &&
+        _number(scholarship['minCGPA'] ?? scholarship['minCgpa']) >
+            _maximumMinCgpa!) {
+      return false;
+    }
+    if (_maximumBacklogs != null &&
+        _number(scholarship['maxBacklogs']).round() > _maximumBacklogs!) {
+      return false;
+    }
+    if (_selectedDeadline.isNotEmpty && !_matchesDeadline(scholarship)) {
+      return false;
+    }
     if (_selectedDeadlineMonth != null &&
         _parseDeadline(scholarship['deadline']?.toString() ?? '')?.month !=
             _selectedDeadlineMonth) {
@@ -172,29 +201,38 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
   bool _matchesText(Map<String, dynamic> value, String key, String selected,
       {List<String> fallbacks = const []}) {
     if (selected.isEmpty) return true;
-    final candidates = [key, ...fallbacks].map((field) => value[field]?.toString().toLowerCase() ?? '');
+    final candidates = [key, ...fallbacks]
+        .map((field) => value[field]?.toString().toLowerCase() ?? '');
     return candidates.any((candidate) => candidate == selected.toLowerCase());
   }
 
-  bool _matchesBoolean(Map<String, dynamic> value, String key, String selected) {
+  bool _matchesBoolean(
+      Map<String, dynamic> value, String key, String selected) {
     if (selected.isEmpty) return true;
     return value[key] == (selected == 'Required' || selected == 'Accepted');
   }
 
-  double _number(dynamic value) => value is num ? value.toDouble() : double.tryParse(value?.toString() ?? '') ?? 0;
+  double _number(dynamic value) => value is num
+      ? value.toDouble()
+      : double.tryParse(value?.toString() ?? '') ?? 0;
 
   bool _matchesDeadline(Map<String, dynamic> scholarship) {
     final deadline = _parseDeadline(scholarship['deadline']?.toString() ?? '');
-    if (_selectedDeadline == 'Open') return deadline == null || !deadline.isBefore(DateTime.now());
+    if (_selectedDeadline == 'Open') {
+      return deadline == null || !deadline.isBefore(DateTime.now());
+    }
     if (deadline == null) return false;
     final days = deadline.difference(DateTime.now()).inDays;
-    return _selectedDeadline == 'Next 30 days' ? days >= 0 && days <= 30 : days >= 0 && days <= 90;
+    return _selectedDeadline == 'Next 30 days'
+        ? days >= 0 && days <= 30
+        : days >= 0 && days <= 90;
   }
 
   void _resetFilters() {
     _searchController.clear();
     setState(() {
-      _selectedField = _selectedDegree = _selectedCountry = _selectedFunding = '';
+      _selectedField =
+          _selectedDegree = _selectedCountry = _selectedFunding = '';
       _selectedDeadline = '';
       _selectedDeadlineMonth = null;
       _selectedIelts = _selectedEnglishMedium = _selectedResearch = '';
@@ -210,7 +248,8 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
     // Firestore snapshot. The cache is invalidated only by a new snapshot.
     if (!identical(_cachedDocuments, documents)) {
       _cachedDocuments = documents;
-      _cachedScholarships = documents.map(_buildScholarshipData).toList(growable: false);
+      _cachedScholarships =
+          documents.map(_buildScholarshipData).toList(growable: false);
     }
     return _cachedScholarships;
   }
@@ -412,7 +451,9 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
                         ..._collectOptions(allData, 'funding'),
                         ..._collectOptions(allData, 'fundingType'),
                         ..._collectOptions(allData, 'amount'),
-                      }.toList()..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase())),
+                      }.toList()
+                        ..sort((a, b) =>
+                            a.toLowerCase().compareTo(b.toLowerCase())),
                       _selectedFunding,
                     );
 
@@ -452,12 +493,16 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
                           return aDate.compareTo(bDate);
                         });
                       } else if (_selectedSort == 'Alphabetical') {
-                        sortedData.sort((a, b) => a['title'].toString().toLowerCase().compareTo(b['title'].toString().toLowerCase()));
+                        sortedData.sort((a, b) => a['title']
+                            .toString()
+                            .toLowerCase()
+                            .compareTo(b['title'].toString().toLowerCase()));
                       } else if (_selectedSort == 'Fully Funded First') {
                         sortedData.sort((a, b) =>
                             _fundingRank(b).compareTo(_fundingRank(a)));
                       } else if (_selectedSort == 'Newest') {
-                        sortedData.sort((a, b) => _newestValue(b).compareTo(_newestValue(a)));
+                        sortedData.sort((a, b) =>
+                            _newestValue(b).compareTo(_newestValue(a)));
                       }
 
                       if (sortedData.isEmpty) {
@@ -489,32 +534,53 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
                             child: Row(
                               children: [
                                 _buildFilterButton(
-                                  'Country', _selectedCountry, countryOptions,
+                                  'Country',
+                                  _selectedCountry,
+                                  countryOptions,
                                   (value) =>
                                       setState(() => _selectedCountry = value),
                                 ),
                                 const SizedBox(width: 10),
                                 _buildFilterButton(
-                                  'Degree', _selectedDegree, degreeOptions,
+                                  'Degree',
+                                  _selectedDegree,
+                                  degreeOptions,
                                   (value) =>
                                       setState(() => _selectedDegree = value),
                                 ),
                                 const SizedBox(width: 10),
                                 _buildFilterButton(
-                                  'Funding', _selectedFunding, fundingOptions,
+                                  'Funding',
+                                  _selectedFunding,
+                                  fundingOptions,
                                   (value) =>
                                       setState(() => _selectedFunding = value),
                                 ),
                                 const SizedBox(width: 10),
-                                _buildFilterButton('Deadline', _selectedDeadline,
-                                    const ['Next 30 days', 'Next 90 days', 'Open'],
-                                    (value) => setState(() => _selectedDeadline = value)),
+                                _buildFilterButton(
+                                    'Deadline',
+                                    _selectedDeadline,
+                                    const [
+                                      'Next 30 days',
+                                      'Next 90 days',
+                                      'Open'
+                                    ],
+                                    (value) => setState(
+                                        () => _selectedDeadline = value)),
                                 const SizedBox(width: 10),
-                                _buildFilterButton('Field', _selectedField, fieldOptions,
-                                    (value) => setState(() => _selectedField = value)),
+                                _buildFilterButton(
+                                    'Field',
+                                    _selectedField,
+                                    fieldOptions,
+                                    (value) =>
+                                        setState(() => _selectedField = value)),
                                 const SizedBox(width: 10),
-                                _buildFilterButton('Sort', _selectedSort, sortOptions,
-                                    (value) => setState(() => _selectedSort = value)),
+                                _buildFilterButton(
+                                    'Sort',
+                                    _selectedSort,
+                                    sortOptions,
+                                    (value) =>
+                                        setState(() => _selectedSort = value)),
                               ],
                             ),
                           ),
@@ -532,7 +598,9 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
       );
 
   bool _isFullyFunded(Map<String, dynamic> s) =>
-      '${s['funding'] ?? s['fundingType'] ?? s['amount'] ?? ''}'.toLowerCase().contains('full');
+      '${s['funding'] ?? s['fundingType'] ?? s['amount'] ?? ''}'
+          .toLowerCase()
+          .contains('full');
 
   int _fundingRank(Map<String, dynamic> scholarship) =>
       _isFullyFunded(scholarship) ? 1 : 0;
@@ -540,20 +608,26 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
   DateTime _newestValue(Map<String, dynamic> s) {
     final raw = s['createdAt'] ?? s['updatedAt'] ?? s['publishedAt'];
     if (raw is Timestamp) return raw.toDate();
-    return DateTime.tryParse(raw?.toString() ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
+    return DateTime.tryParse(raw?.toString() ?? '') ??
+        DateTime.fromMillisecondsSinceEpoch(0);
   }
 
-  Widget _buildMoreFiltersButton() =>
-      ActionChip(
+  Widget _buildMoreFiltersButton() => ActionChip(
         avatar: const Icon(Icons.tune, size: 18),
-        label: Text(_advancedFilterCount == 0 ? 'Filters' : 'Filters ($_advancedFilterCount)'),
+        label: Text(_advancedFilterCount == 0
+            ? 'Filters'
+            : 'Filters ($_advancedFilterCount)'),
         onPressed: () => _showAdvancedFilters(_cachedDocuments ?? const []),
         shape: StadiumBorder(side: BorderSide(color: Colors.grey.shade300)),
-        backgroundColor: _advancedFilterCount == 0 ? Colors.white : const Color(0xFFE8EDFF),
+        backgroundColor:
+            _advancedFilterCount == 0 ? Colors.white : const Color(0xFFE8EDFF),
       );
 
-  int get _advancedFilterCount => [
-        _selectedIelts, _selectedEnglishMedium, _selectedResearch,
+  int get _advancedFilterCount =>
+      [
+        _selectedIelts,
+        _selectedEnglishMedium,
+        _selectedResearch,
       ].where((value) => value.isNotEmpty).length +
       (_maximumMinCgpa == null ? 0 : 1) +
       (_maximumBacklogs == null ? 0 : 1) +
@@ -561,11 +635,12 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
 
   Future<void> _showAdvancedFilters(
       List<QueryDocumentSnapshot<Map<String, dynamic>>> docs) async {
-    String selectedIelts = _selectedIelts;
-    String selectedEnglish = _selectedEnglishMedium, selectedResearch = _selectedResearch;
-    double? cgpa = _maximumMinCgpa;
-    int? backlogs = _maximumBacklogs;
-    int? deadlineMonth = _selectedDeadlineMonth;
+    var selectedIelts = _selectedIelts;
+    var selectedEnglish = _selectedEnglishMedium,
+        selectedResearch = _selectedResearch;
+    var cgpa = _maximumMinCgpa;
+    var backlogs = _maximumBacklogs;
+    var deadlineMonth = _selectedDeadlineMonth;
 
     await showModalBottomSheet<void>(
       context: context,
@@ -574,26 +649,78 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
       builder: (sheetContext) => StatefulBuilder(
         builder: (context, setSheetState) => SafeArea(
           child: Padding(
-            padding: EdgeInsets.fromLTRB(20, 0, 20, MediaQuery.viewInsetsOf(context).bottom + 20),
+            padding: EdgeInsets.fromLTRB(
+                20, 0, 20, MediaQuery.viewInsetsOf(context).bottom + 20),
             child: SizedBox(
               height: MediaQuery.sizeOf(context).height * .78,
               child: Column(children: [
                 Row(children: [
-                  const Expanded(child: Text('More filters', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700))),
-                  TextButton(onPressed: () => setSheetState(() { selectedIelts = selectedEnglish = selectedResearch = ''; cgpa = null; backlogs = null; deadlineMonth = null; }), child: const Text('Reset')),
+                  const Expanded(
+                      child: Text('More filters',
+                          style: TextStyle(
+                              fontSize: 22, fontWeight: FontWeight.w700))),
+                  TextButton(
+                      onPressed: () => setSheetState(() {
+                            selectedIelts =
+                                selectedEnglish = selectedResearch = '';
+                            cgpa = null;
+                            backlogs = null;
+                            deadlineMonth = null;
+                          }),
+                      child: const Text('Reset')),
                 ]),
-                Expanded(child: ListView(children: [
-                  _sheetSelect('IELTS Required', selectedIelts, const ['Required', 'Not Required'], (v) => setSheetState(() => selectedIelts = v)),
-                  _sheetSelect('English Medium Accepted', selectedEnglish, const ['Accepted', 'Not Accepted'], (v) => setSheetState(() => selectedEnglish = v)),
-                  _sheetSelect('Research Required', selectedResearch, const ['Required', 'Not Required'], (v) => setSheetState(() => selectedResearch = v)),
-                  _sheetSelect('Deadline Month', deadlineMonth == null ? '' : _monthName(deadlineMonth!), _monthNames, (v) => setSheetState(() => deadlineMonth = v.isEmpty ? null : _monthNames.indexOf(v) + 1)),
-                  _sheetSelect('Minimum CGPA', cgpa?.toString() ?? '', const ['2.0', '2.5', '3.0', '3.5'], (v) => setSheetState(() => cgpa = v.isEmpty ? null : double.parse(v))),
-                  _sheetSelect('Maximum Backlogs', backlogs?.toString() ?? '', const ['0', '1', '2', '3', '5'], (v) => setSheetState(() => backlogs = v.isEmpty ? null : int.parse(v))),
+                Expanded(
+                    child: ListView(children: [
+                  _sheetSelect(
+                      'IELTS Required',
+                      selectedIelts,
+                      const ['Required', 'Not Required'],
+                      (v) => setSheetState(() => selectedIelts = v)),
+                  _sheetSelect(
+                      'English Medium Accepted',
+                      selectedEnglish,
+                      const ['Accepted', 'Not Accepted'],
+                      (v) => setSheetState(() => selectedEnglish = v)),
+                  _sheetSelect(
+                      'Research Required',
+                      selectedResearch,
+                      const ['Required', 'Not Required'],
+                      (v) => setSheetState(() => selectedResearch = v)),
+                  _sheetSelect(
+                      'Deadline Month',
+                      deadlineMonth == null ? '' : _monthName(deadlineMonth!),
+                      _monthNames,
+                      (v) => setSheetState(() => deadlineMonth =
+                          v.isEmpty ? null : _monthNames.indexOf(v) + 1)),
+                  _sheetSelect(
+                      'Minimum CGPA',
+                      cgpa?.toString() ?? '',
+                      const ['2.0', '2.5', '3.0', '3.5'],
+                      (v) => setSheetState(
+                          () => cgpa = v.isEmpty ? null : double.parse(v))),
+                  _sheetSelect(
+                      'Maximum Backlogs',
+                      backlogs?.toString() ?? '',
+                      const ['0', '1', '2', '3', '5'],
+                      (v) => setSheetState(
+                          () => backlogs = v.isEmpty ? null : int.parse(v))),
                 ])),
-                SizedBox(width: double.infinity, child: FilledButton(
-                  onPressed: () { setState(() { _selectedIelts = selectedIelts; _selectedEnglishMedium = selectedEnglish; _selectedResearch = selectedResearch; _maximumMinCgpa = cgpa; _maximumBacklogs = backlogs; _selectedDeadlineMonth = deadlineMonth; }); Navigator.pop(sheetContext); },
-                  child: const Text('Show results'),
-                )),
+                SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: () {
+                        setState(() {
+                          _selectedIelts = selectedIelts;
+                          _selectedEnglishMedium = selectedEnglish;
+                          _selectedResearch = selectedResearch;
+                          _maximumMinCgpa = cgpa;
+                          _maximumBacklogs = backlogs;
+                          _selectedDeadlineMonth = deadlineMonth;
+                        });
+                        Navigator.pop(sheetContext);
+                      },
+                      child: const Text('Show results'),
+                    )),
               ]),
             ),
           ),
@@ -602,21 +729,38 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
     );
   }
 
-  Widget _sheetSelect(String label, String selected, List<String> values, ValueChanged<String> onChanged) =>
+  Widget _sheetSelect(String label, String selected, List<String> values,
+          ValueChanged<String> onChanged) =>
       Padding(
         padding: const EdgeInsets.only(bottom: 14),
         child: DropdownButtonFormField<String>(
-          value: selected.isEmpty ? null : selected,
+          initialValue: selected.isEmpty ? null : selected,
           isExpanded: true,
-          decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
-          items: [const DropdownMenuItem(value: '', child: Text('Any')), ...values.map((value) => DropdownMenuItem(value: value, child: Text(value, overflow: TextOverflow.ellipsis)))],
+          decoration: InputDecoration(
+              labelText: label, border: const OutlineInputBorder()),
+          items: [
+            const DropdownMenuItem(value: '', child: Text('Any')),
+            ...values.map((value) => DropdownMenuItem(
+                value: value,
+                child: Text(value, overflow: TextOverflow.ellipsis)))
+          ],
           onChanged: (value) => onChanged(value ?? ''),
         ),
       );
 
   static const List<String> _monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December',
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
 
   String _monthName(int month) => _monthNames[month - 1];
@@ -641,10 +785,10 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
         },
         itemBuilder: (BuildContext context) => [
           if (label != 'Sort') ...[
-            PopupMenuItem(
+            const PopupMenuItem(
               value: 'Clear',
               child: Row(
-                children: const [
+                children: [
                   Icon(Icons.close, size: 18),
                   SizedBox(width: 8),
                   Text('Clear'),
@@ -653,27 +797,26 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
             ),
             const PopupMenuDivider(),
           ],
-          ...options.map((option) {
-            return PopupMenuItem(
-              value: option,
-              child: Row(
-                children: [
-                  if (selectedValue == option)
-                    const Icon(Icons.check, size: 18, color: Color(0xFF5B7AE8))
-                  else
-                    const SizedBox(width: 18),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      option,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+          ...options.map((option) => PopupMenuItem(
+                value: option,
+                child: Row(
+                  children: [
+                    if (selectedValue == option)
+                      const Icon(Icons.check,
+                          size: 18, color: Color(0xFF5B7AE8))
+                    else
+                      const SizedBox(width: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        option,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            );
-          }).toList(),
+                  ],
+                ),
+              )),
         ],
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),

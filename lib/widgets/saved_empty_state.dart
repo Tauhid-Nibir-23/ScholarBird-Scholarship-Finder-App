@@ -21,13 +21,15 @@ class SavedEmptyState extends StatelessWidget {
                   color: sbPrimary.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.bookmark_border, color: sbPrimary, size: 44),
+                child: const Icon(Icons.bookmark_border,
+                    color: sbPrimary, size: 44),
               ),
               const SizedBox(height: 16),
               const Text(
                 'No saved scholarships yet',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: sbText),
+                style: TextStyle(
+                    fontSize: 20, fontWeight: FontWeight.w700, color: sbText),
               ),
               const SizedBox(height: 8),
               const Text(

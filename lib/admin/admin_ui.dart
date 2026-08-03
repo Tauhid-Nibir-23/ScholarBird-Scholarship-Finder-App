@@ -28,7 +28,8 @@ class AdminTheme {
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: Colors.white,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
             borderSide: BorderSide.none,
@@ -39,7 +40,8 @@ class AdminTheme {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: AdminPalette.primary, width: 1.5),
+            borderSide:
+                const BorderSide(color: AdminPalette.primary, width: 1.5),
           ),
         ),
         filledButtonTheme: FilledButtonThemeData(
@@ -48,14 +50,19 @@ class AdminTheme {
             foregroundColor: Colors.white,
             elevation: 0,
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
       );
 }
 
 class AdminSurface extends StatelessWidget {
-  const AdminSurface({super.key, required this.child, this.padding = const EdgeInsets.all(20), this.margin});
+  const AdminSurface(
+      {required this.child,
+      super.key,
+      this.padding = const EdgeInsets.all(20),
+      this.margin});
 
   final Widget child;
   final EdgeInsetsGeometry padding;
@@ -81,7 +88,7 @@ class AdminSurface extends StatelessWidget {
 }
 
 class AdminSectionTitle extends StatelessWidget {
-  const AdminSectionTitle({super.key, required this.title, this.subtitle});
+  const AdminSectionTitle({required this.title, super.key, this.subtitle});
 
   final String title;
   final String? subtitle;
@@ -90,7 +97,9 @@ class AdminSectionTitle extends StatelessWidget {
   Widget build(BuildContext context) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(color: AdminPalette.heading, fontWeight: FontWeight.w700)),
+          Text(title,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: AdminPalette.heading, fontWeight: FontWeight.w700)),
           if (subtitle != null) ...[
             const SizedBox(height: 4),
             Text(subtitle!, style: const TextStyle(color: AdminPalette.body)),
@@ -100,7 +109,7 @@ class AdminSectionTitle extends StatelessWidget {
 }
 
 class AdminAvatar extends StatelessWidget {
-  const AdminAvatar({super.key, required this.name, this.radius = 20});
+  const AdminAvatar({required this.name, super.key, this.radius = 20});
 
   final String name;
   final double radius;
@@ -112,11 +121,15 @@ class AdminAvatar extends StatelessWidget {
         alignment: Alignment.center,
         decoration: const BoxDecoration(
           shape: BoxShape.circle,
-          gradient: LinearGradient(colors: [AdminPalette.primary, AdminPalette.primaryDark]),
+          gradient: LinearGradient(
+              colors: [AdminPalette.primary, AdminPalette.primaryDark]),
         ),
         child: Text(
           name.trim().isEmpty ? '?' : name.trim().substring(0, 1).toUpperCase(),
-          style: TextStyle(color: Colors.white, fontSize: radius * .8, fontWeight: FontWeight.w700),
+          style: TextStyle(
+              color: Colors.white,
+              fontSize: radius * .8,
+              fontWeight: FontWeight.w700),
         ),
       );
 }

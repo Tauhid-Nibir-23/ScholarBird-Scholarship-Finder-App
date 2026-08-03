@@ -30,9 +30,7 @@ class ScholarshipDetailsScreen extends StatelessWidget {
     final minCgpa = (data['minCgpa'] ?? '').toString();
     final cgpaScale = (data['cgpaScale'] ?? '').toString();
     final ieltsRequired = (data['ieltsRequired'] ?? '').toString();
-    final maxBacklogs = (data['maxBacklogs'] ?? '').toString();
     final fullyFunded = _asBool(data['fullyFunded']);
-    final englishMediumAccepted = _asBool(data['englishMediumAccepted']);
     final researchRequired = _asBool(data['researchRequired']);
 
     return Scaffold(
@@ -161,13 +159,6 @@ class ScholarshipDetailsScreen extends StatelessWidget {
             _buildEligibilityItem(
                 'IELTS Required: ${_displayValue(ieltsRequired)}'),
             _buildEligibilityItem(
-                'Maximum Backlogs: ${_displayValue(maxBacklogs)}'),
-            _buildEligibilityItem(
-              englishMediumAccepted
-                  ? 'English Medium Accepted'
-                  : 'English Medium Not Accepted',
-            ),
-            _buildEligibilityItem(
               researchRequired ? 'Research Required' : 'Research Not Required',
             ),
             const SizedBox(height: 24),
@@ -200,17 +191,18 @@ class ScholarshipDetailsScreen extends StatelessWidget {
                       final docs = snapshot.data!.docs
                           .where((doc) => doc.id != data['id'])
                           .toList();
-                      if (docs.isEmpty)
+                      if (docs.isEmpty) {
                         return const Text(
                             'More opportunities in this field will appear here.',
                             style: TextStyle(color: Color(0xFF667085)));
+                      }
                       return ListView.separated(
                         scrollDirection: Axis.horizontal,
                         itemCount: docs.length,
                         separatorBuilder: (_, __) => const SizedBox(width: 12),
                         itemBuilder: (_, index) {
                           final item =
-                              docs[index].data() as Map<String, dynamic>;
+                              docs[index].data()! as Map<String, dynamic>;
                           return SizedBox(
                             width: 210,
                             child: Material(

@@ -8,13 +8,6 @@ class ScholarshipRecommendation {
     this.scholarshipData,
   });
 
-  final String scholarshipName;
-  final String matchProbability;
-  final String reason;
-  final String country;
-  final String scholarshipId;
-  final Map<String, dynamic>? scholarshipData;
-
   factory ScholarshipRecommendation.fromJson(Map<String, dynamic> json) =>
       ScholarshipRecommendation(
         scholarshipName: (json['scholarshipName'] ?? '').toString().trim(),
@@ -22,11 +15,19 @@ class ScholarshipRecommendation {
         reason: (json['reason'] ?? '').toString().trim(),
       );
 
+  final String scholarshipName;
+  final String matchProbability;
+  final String reason;
+  final String country;
+  final String scholarshipId;
+  final Map<String, dynamic>? scholarshipData;
+
   ScholarshipRecommendation withScholarship({
     required String country,
     required String scholarshipId,
     Map<String, dynamic>? scholarshipData,
-  }) => ScholarshipRecommendation(
+  }) =>
+      ScholarshipRecommendation(
         scholarshipName: scholarshipName,
         matchProbability: matchProbability,
         reason: reason,

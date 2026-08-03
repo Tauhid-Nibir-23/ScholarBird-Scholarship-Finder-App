@@ -31,9 +31,11 @@ class SavedScholarshipIconButton extends StatelessWidget {
             iconSize: iconSize,
             onPressed: () async {
               if (isSaved) {
-                await SavedScholarshipsService.instance.unsaveScholarship(scholarshipId);
+                await SavedScholarshipsService.instance
+                    .unsaveScholarship(scholarshipId);
               } else {
-                await SavedScholarshipsService.instance.saveScholarship(scholarship);
+                await SavedScholarshipsService.instance
+                    .saveScholarship(scholarship);
               }
             },
             icon: AnimatedSwitcher(

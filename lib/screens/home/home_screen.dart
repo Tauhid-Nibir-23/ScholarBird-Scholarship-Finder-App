@@ -55,81 +55,81 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: const Color(0xFFF5F7FB),
-      drawer: ScholarBirdNavigationDrawer(
-        selectedIndex: _currentIndex,
-        onTabSelected: _goToTab,
-        onSaved: () => _push(const SavedScholarshipsScreen()),
-        onNotifications: () => _push(const NotificationsScreen()),
-        onPremium: () => _push(const PremiumUpgradeScreen()),
-        onLogout: _logout,
-      ),
-      appBar: _buildAppBar(),
-      body: PageView(
-        controller: _pageController,
-        onPageChanged: (index) {
-          setState(() => _currentIndex = index);
-        },
-        physics: const NeverScrollableScrollPhysics(),
-        children: _screens,
-      ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 12,
-              offset: const Offset(0, -4),
-            ),
-          ],
+        key: _scaffoldKey,
+        backgroundColor: const Color(0xFFF5F7FB),
+        drawer: ScholarBirdNavigationDrawer(
+          selectedIndex: _currentIndex,
+          onTabSelected: _goToTab,
+          onSaved: () => _push(const SavedScholarshipsScreen()),
+          onNotifications: () => _push(const NotificationsScreen()),
+          onPremium: () => _push(const PremiumUpgradeScreen()),
+          onLogout: _logout,
         ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: _goToTab,
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
-          selectedItemColor: const Color(0xFF5B7AE8),
-          unselectedItemColor: const Color(0xFF9CA3AF),
-          selectedLabelStyle: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-          ),
-          unselectedLabelStyle: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-          ),
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              activeIcon: Icon(Icons.home),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.search_outlined),
-              activeIcon: Icon(Icons.search),
-              label: 'Explore',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.auto_awesome_outlined),
-              activeIcon: Icon(Icons.auto_awesome),
-              label: 'AI Advisor',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.assignment_outlined),
-              activeIcon: Icon(Icons.assignment),
-              label: 'Applications',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
-              label: 'Profile',
-            ),
-          ],
+        appBar: _buildAppBar(),
+        body: PageView(
+          controller: _pageController,
+          onPageChanged: (index) {
+            setState(() => _currentIndex = index);
+          },
+          physics: const NeverScrollableScrollPhysics(),
+          children: _screens,
         ),
-      ),
-    );
+        bottomNavigationBar: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 12,
+                offset: const Offset(0, -4),
+              ),
+            ],
+          ),
+          child: BottomNavigationBar(
+            currentIndex: _currentIndex,
+            onTap: _goToTab,
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: Colors.white,
+            selectedItemColor: const Color(0xFF5B7AE8),
+            unselectedItemColor: const Color(0xFF9CA3AF),
+            selectedLabelStyle: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+            unselectedLabelStyle: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.home_outlined),
+                activeIcon: Icon(Icons.home),
+                label: 'Home',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.search_outlined),
+                activeIcon: Icon(Icons.search),
+                label: 'Explore',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.auto_awesome_outlined),
+                activeIcon: Icon(Icons.auto_awesome),
+                label: 'AI Advisor',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.assignment_outlined),
+                activeIcon: Icon(Icons.assignment),
+                label: 'Applications',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.person_outline),
+                activeIcon: Icon(Icons.person),
+                label: 'Profile',
+              ),
+            ],
+          ),
+        ),
+      );
 
   void _goToTab(int index) {
     if (_currentIndex == index) return;
@@ -145,7 +145,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _logout() async {
     await FirebaseAuth.instance.signOut();
-    if (mounted) Navigator.of(context).pushNamedAndRemoveUntil('/login', (_) => false);
+    if (mounted) {
+      Navigator.of(context).pushNamedAndRemoveUntil('/login', (_) => false);
+    }
   }
 
   PreferredSizeWidget? _buildAppBar() {

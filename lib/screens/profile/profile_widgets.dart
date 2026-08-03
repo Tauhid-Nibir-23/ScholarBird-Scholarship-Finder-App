@@ -51,7 +51,8 @@ class ProfileMenuTile extends StatelessWidget {
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isDestructive ? Colors.red.withValues(alpha: 0.2) : sbBorder,
+              color:
+                  isDestructive ? Colors.red.withValues(alpha: 0.2) : sbBorder,
             ),
           ),
           child: Row(
@@ -65,7 +66,21 @@ class ProfileMenuTile extends StatelessWidget {
                     size: 22,
                   ),
                   const SizedBox(width: 12),
-                  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: TextStyle(fontSize: 16,fontWeight: FontWeight.w600,color: isDestructive ? Colors.red.shade600 : sbText)), if (subtitle != null) Text(subtitle!, style: const TextStyle(fontSize: 12,color: sbSecondaryText))]),
+                  Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(title,
+                            style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: isDestructive
+                                    ? Colors.red.shade600
+                                    : sbText)),
+                        if (subtitle != null)
+                          Text(subtitle!,
+                              style: const TextStyle(
+                                  fontSize: 12, color: sbSecondaryText))
+                      ]),
                 ],
               ),
               Icon(
@@ -114,7 +129,8 @@ class ProfileTextField extends StatelessWidget {
           ),
           filled: true,
           fillColor: Colors.white,
-          contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: sbBorder, width: 1.5),
@@ -287,45 +303,45 @@ class ProfileEmptyState extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                color: sbPrimary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(60),
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  color: sbPrimary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(60),
+                ),
+                child: Icon(
+                  icon,
+                  color: sbPrimary,
+                  size: 60,
+                ),
               ),
-              child: Icon(
-                icon,
-                color: sbPrimary,
-                size: 60,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: sbText,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
-                color: sbSecondaryText,
-              ),
-            ),
-            if (action != null) ...[
               const SizedBox(height: 20),
-              action!,
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: sbText,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                  color: sbSecondaryText,
+                ),
+              ),
+              if (action != null) ...[
+                const SizedBox(height: 20),
+                action!,
+              ],
             ],
-          ],
           ),
         ),
       );

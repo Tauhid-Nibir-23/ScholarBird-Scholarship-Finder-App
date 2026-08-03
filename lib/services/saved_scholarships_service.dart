@@ -29,7 +29,10 @@ class SavedScholarshipsService {
   CollectionReference<Map<String, dynamic>>? _collection() {
     final user = _auth.currentUser;
     if (user == null) return null;
-    return _firestore.collection('users').doc(user.uid).collection('savedScholarships');
+    return _firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('savedScholarships');
   }
 
   DocumentReference<Map<String, dynamic>>? _doc(String scholarshipId) {
@@ -41,7 +44,9 @@ class SavedScholarshipsService {
   Stream<bool> watchSavedStatus(String scholarshipId) {
     final doc = _doc(scholarshipId);
     if (doc == null) return Stream.value(false);
-    return doc.snapshots(includeMetadataChanges: true).map((snapshot) => snapshot.exists);
+    return doc
+        .snapshots(includeMetadataChanges: true)
+        .map((snapshot) => snapshot.exists);
   }
 
   Stream<List<SavedScholarshipRef>> watchSavedScholarships() {
@@ -119,7 +124,8 @@ class SavedScholarshipsService {
       );
     }
 
-    final snapshot = await doc.get(const GetOptions(source: Source.serverAndCache));
+    final snapshot =
+        await doc.get(const GetOptions(source: Source.serverAndCache));
     if (snapshot.exists) {
       await doc.delete();
       return;
@@ -131,7 +137,8 @@ class SavedScholarshipsService {
   Future<void> clearAllSaved() async {
     final collection = _collection();
     if (collection == null) return;
-    final snapshot = await collection.get(const GetOptions(source: Source.serverAndCache));
+    final snapshot =
+        await collection.get(const GetOptions(source: Source.serverAndCache));
     final batch = _firestore.batch();
     for (final doc in snapshot.docs) {
       batch.delete(doc.reference);
@@ -153,21 +160,21 @@ class SavedScholarshipsService {
     await batch.commit();
   }
 
-  Stream<List<Map<String, dynamic>>> watchSavedScholarshipsWithFallback() {
-    return watchSavedScholarships().asyncMap((savedItems) async {
-      final resolved = <Map<String, dynamic>>[];
-      for (final savedItem in savedItems) {
-        final scholarshipDoc = await _firestore.collection('scholarships').doc(savedItem.id).get(
-              const GetOptions(source: Source.serverAndCache),
-            );
-        resolved.add(<String, dynamic>{
-          ...savedItem.data,
-          if (scholarshipDoc.data() != null) ...scholarshipDoc.data()!,
-          'id': savedItem.id,
-          'savedAt': savedItem.data['savedAt'],
-        });
-      }
-      return resolved;
-    });
-  }
+  Stream<List<Map<String, dynamic>>> watchSavedScholarshipsWithFallback() =>
+      watchSavedScholarships().asyncMap((savedItems) async {
+        final resolved = <Map<String, dynamic>>[];
+        for (final savedItem in savedItems) {
+          final scholarshipDoc =
+              await _firestore.collection('scholarships').doc(savedItem.id).get(
+                    const GetOptions(source: Source.serverAndCache),
+                  );
+          resolved.add(<String, dynamic>{
+            ...savedItem.data,
+            if (scholarshipDoc.data() != null) ...scholarshipDoc.data()!,
+            'id': savedItem.id,
+            'savedAt': savedItem.data['savedAt'],
+          });
+        }
+        return resolved;
+      });
 }

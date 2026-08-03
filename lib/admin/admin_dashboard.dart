@@ -20,9 +20,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
   int _selectedIndex = 0;
 
   static const _items = <_AdminDestination>[
-    _AdminDestination('Dashboard', Icons.space_dashboard_outlined, Icons.space_dashboard),
+    _AdminDestination(
+        'Dashboard', Icons.space_dashboard_outlined, Icons.space_dashboard),
     _AdminDestination('Scholarships', Icons.school_outlined, Icons.school),
-    _AdminDestination('Applications', Icons.description_outlined, Icons.description),
+    _AdminDestination(
+        'Applications', Icons.description_outlined, Icons.description),
     _AdminDestination('Users', Icons.people_outline, Icons.people),
     _AdminDestination('Analytics', Icons.insights_outlined, Icons.insights),
     _AdminDestination('Settings', Icons.settings_outlined, Icons.settings),
@@ -47,7 +49,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not sign out. Please try again.')),
+          const SnackBar(
+              content: Text('Could not sign out. Please try again.')),
         );
       }
     }
@@ -60,43 +63,46 @@ class _AdminDashboardState extends State<AdminDashboard> {
     return Theme(
       data: AdminTheme.data(context),
       child: Scaffold(
-      drawer: isWide
-          ? null
-          : Drawer(
-              child: _Sidebar(
-                items: _items,
-                selectedIndex: _selectedIndex,
-                onSelected: _select,
-                onLogout: _logout,
-                closeOnSelect: true,
+        drawer: isWide
+            ? null
+            : Drawer(
+                child: _Sidebar(
+                  items: _items,
+                  selectedIndex: _selectedIndex,
+                  onSelected: _select,
+                  onLogout: _logout,
+                  closeOnSelect: true,
+                ),
               ),
+        appBar: AppBar(
+          title: Text(_items[_selectedIndex].label),
+          actions: [
+            IconButton(
+                onPressed: () {},
+                icon: const Icon(Icons.notifications_none),
+                tooltip: 'Notifications'),
+            const Padding(
+              padding: EdgeInsets.only(right: 16),
+              child: CircleAvatar(child: Text('A')),
             ),
-      appBar: AppBar(
-        title: Text(_items[_selectedIndex].label),
-        actions: [
-          IconButton(onPressed: () {}, icon: const Icon(Icons.notifications_none), tooltip: 'Notifications'),
-          const Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: CircleAvatar(child: Text('A')),
-          ),
-        ],
-      ),
-      body: Row(
-        children: [
-          if (isWide)
-            SizedBox(
-              width: 260,
-              child: _Sidebar(
-                items: _items,
-                selectedIndex: _selectedIndex,
-                onSelected: _select,
-                onLogout: _logout,
-                closeOnSelect: false,
+          ],
+        ),
+        body: Row(
+          children: [
+            if (isWide)
+              SizedBox(
+                width: 260,
+                child: _Sidebar(
+                  items: _items,
+                  selectedIndex: _selectedIndex,
+                  onSelected: _select,
+                  onLogout: _logout,
+                  closeOnSelect: false,
+                ),
               ),
-            ),
-          Expanded(child: _pages[_selectedIndex]),
-        ],
-      ),
+            Expanded(child: _pages[_selectedIndex]),
+          ],
+        ),
       ),
     );
   }
@@ -125,12 +131,21 @@ class _Sidebar extends StatelessWidget {
             children: [
               const Padding(
                 padding: EdgeInsets.fromLTRB(24, 28, 24, 24),
-                child: Row(children: [Icon(Icons.school, size: 30, color: AdminPalette.primary), SizedBox(width: 12), Text('ScholarBird', style: TextStyle(fontSize: 21, fontWeight: FontWeight.w800, color: AdminPalette.heading))]),
+                child: Row(children: [
+                  Icon(Icons.school, size: 30, color: AdminPalette.primary),
+                  SizedBox(width: 12),
+                  Text('ScholarBird',
+                      style: TextStyle(
+                          fontSize: 21,
+                          fontWeight: FontWeight.w800,
+                          color: AdminPalette.heading))
+                ]),
               ),
               const Divider(height: 1),
               Expanded(
                 child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
                   itemCount: items.length,
                   itemBuilder: (context, index) {
                     final item = items[index];
@@ -143,7 +158,8 @@ class _Sidebar extends StatelessWidget {
                         ),
                         title: Text(item.label),
                         selected: isSelected,
-                        selectedTileColor: AdminPalette.primary.withValues(alpha: 0.12),
+                        selectedTileColor:
+                            AdminPalette.primary.withValues(alpha: 0.12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -168,7 +184,8 @@ class _Sidebar extends StatelessWidget {
                       foregroundColor: AdminPalette.primaryDark,
                       side: const BorderSide(color: AdminPalette.primary),
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                 ),

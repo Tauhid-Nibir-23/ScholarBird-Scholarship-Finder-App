@@ -6,7 +6,7 @@ const sbInk = Color(0xFF1A1A2E);
 
 class ScholarshipImage extends StatelessWidget {
   const ScholarshipImage(
-      {super.key, required this.url, required this.height, this.heroTag});
+      {required this.url, required this.height, super.key, this.heroTag});
   final String url;
   final double height;
   final String? heroTag;
@@ -87,7 +87,7 @@ class _SkeletonCard extends StatelessWidget {
 }
 
 class _ShimmerBar extends StatelessWidget {
-  const _ShimmerBar({this.width = double.infinity, required this.height});
+  const _ShimmerBar({required this.height, this.width = double.infinity});
   final double width;
   final double height;
   @override
@@ -101,10 +101,10 @@ class _ShimmerBar extends StatelessWidget {
 
 class ScholarshipState extends StatelessWidget {
   const ScholarshipState(
-      {super.key,
-      required this.icon,
+      {required this.icon,
       required this.title,
       required this.description,
+      super.key,
       this.onRetry});
   final IconData icon;
   final String title;
@@ -151,9 +151,9 @@ class ScholarshipState extends StatelessWidget {
 
 class InfoPill extends StatelessWidget {
   const InfoPill(
-      {super.key,
-      required this.label,
+      {required this.label,
       required this.icon,
+      super.key,
       this.color = sbBlue});
   final String label;
   final IconData icon;

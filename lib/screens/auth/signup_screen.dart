@@ -15,14 +15,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
   late TextEditingController _emailController;
   late TextEditingController _passwordController;
   late TextEditingController _confirmPasswordController;
-  
+
   String? _selectedDepartment;
   String? _selectedDegree;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
 
-  final List<String> departments = ['CSE', 'EEE', 'BBA', 'Mechanical', 'Civil', 'Textile'];
+  final List<String> departments = [
+    'CSE',
+    'EEE',
+    'BBA',
+    'Mechanical',
+    'Civil',
+    'Textile'
+  ];
   final List<String> degrees = ['Undergraduate', 'Postgraduate'];
 
   @override
@@ -46,7 +53,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FB),
       appBar: AppBar(
@@ -56,7 +63,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
           onTap: () => Navigator.of(context).pop(),
           child: const Padding(
             padding: EdgeInsets.all(8),
-            child: Icon(Icons.arrow_back_rounded, color: Color(0xFF1A1A2E), size: 28),
+            child: Icon(Icons.arrow_back_rounded,
+                color: Color(0xFF1A1A2E), size: 28),
           ),
         ),
         title: const Text(
@@ -126,9 +134,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   prefixIcon: Icons.lock_outline,
                   obscureText: _obscurePassword,
                   suffixIcon: GestureDetector(
-                    onTap: () => setState(() => _obscurePassword = !_obscurePassword),
+                    onTap: () =>
+                        setState(() => _obscurePassword = !_obscurePassword),
                     child: Icon(
-                      _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                      _obscurePassword
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
                       color: const Color(0xFF5B7AE8),
                     ),
                   ),
@@ -143,9 +154,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   prefixIcon: Icons.lock_outline,
                   obscureText: _obscureConfirmPassword,
                   suffixIcon: GestureDetector(
-                    onTap: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                    onTap: () => setState(() =>
+                        _obscureConfirmPassword = !_obscureConfirmPassword),
                     child: Icon(
-                      _obscureConfirmPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                      _obscureConfirmPassword
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
                       color: const Color(0xFF5B7AE8),
                     ),
                   ),
@@ -160,7 +174,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   value: _selectedDepartment,
                   items: departments,
                   prefixIcon: Icons.school_outlined,
-                  onChanged: (value) => setState(() => _selectedDepartment = value),
+                  onChanged: (value) =>
+                      setState(() => _selectedDepartment = value),
                 ),
 
                 const SizedBox(height: 16),
@@ -182,7 +197,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   onPressed: _isLoading ? null : _handleSignUp,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF5B7AE8),
-                    disabledBackgroundColor: const Color(0xFF5B7AE8).withValues(alpha: 0.5),
+                    disabledBackgroundColor:
+                        const Color(0xFF5B7AE8).withValues(alpha: 0.5),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -195,7 +211,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           width: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
                       : const Text(
@@ -279,7 +296,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     try {
       print('📝 Attempting to create user with email: $email');
-      
+
       // Create user in Firebase
       final userCredential =
           await FirebaseAuth.instance.createUserWithEmailAndPassword(
@@ -310,7 +327,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
       // Update user profile name
       await FirebaseAuth.instance.currentUser?.updateDisplayName(name);
-      
+
       print('✅ Profile updated with name: $name');
 
       if (mounted) {
@@ -320,13 +337,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
       print('❌ Error: ${e.toString()}');
       var errorMessage = 'Sign up failed: Please try again';
       final errorStr = e.toString().toLowerCase();
-      
+
       // Parse error from string (avoid type checks which fail on web)
-      if (errorStr.contains('email-already-in-use') || errorStr.contains('already in use')) {
+      if (errorStr.contains('email-already-in-use') ||
+          errorStr.contains('already in use')) {
         errorMessage = 'Email is already in use';
-      } else if (errorStr.contains('invalid-email') || errorStr.contains('invalid email')) {
+      } else if (errorStr.contains('invalid-email') ||
+          errorStr.contains('invalid email')) {
         errorMessage = 'Email address is not valid';
-      } else if (errorStr.contains('weak-password') || errorStr.contains('too weak')) {
+      } else if (errorStr.contains('weak-password') ||
+          errorStr.contains('too weak')) {
         errorMessage = 'Password is too weak';
       } else if (errorStr.contains('configuration-not-found')) {
         errorMessage =
@@ -340,7 +360,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           errorMessage = 'Sign up failed: $firstLine';
         }
       }
-      
+
       if (mounted) {
         _showErrorDialog(errorMessage);
       }
@@ -389,7 +409,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
 // Reusable Custom Dropdown Field Widget
 class CustomDropdownField extends StatelessWidget {
-
   const CustomDropdownField({
     required this.items,
     required this.label,
@@ -408,69 +427,71 @@ class CustomDropdownField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF1A1A2E),
-            letterSpacing: 0.2,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFE5E7EB), width: 1.5),
-          ),
-          child: DropdownButtonFormField<String>(
-            initialValue: value,
-            decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
-                color: Color(0xFFB4BAC4),
-              ),
-              prefixIcon: Icon(
-                prefixIcon,
-                color: const Color(0xFF5B7AE8),
-                size: 22,
-              ),
-              filled: true,
-              fillColor: Colors.white,
-              contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-              border: InputBorder.none,
-              enabledBorder: InputBorder.none,
-              focusedBorder: InputBorder.none,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF1A1A2E),
+              letterSpacing: 0.2,
             ),
-            items: items.map((item) => DropdownMenuItem<String>(
-              value: item,
-              child: Text(
-                item,
-                style: const TextStyle(
+          ),
+          const SizedBox(height: 8),
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE5E7EB), width: 1.5),
+            ),
+            child: DropdownButtonFormField<String>(
+              initialValue: value,
+              decoration: InputDecoration(
+                hintText: hint,
+                hintStyle: const TextStyle(
                   fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF1A1A2E),
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFFB4BAC4),
+                ),
+                prefixIcon: Icon(
+                  prefixIcon,
+                  color: const Color(0xFF5B7AE8),
+                  size: 22,
+                ),
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+              ),
+              items: items
+                  .map((item) => DropdownMenuItem<String>(
+                        value: item,
+                        child: Text(
+                          item,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF1A1A2E),
+                          ),
+                        ),
+                      ))
+                  .toList(),
+              onChanged: onChanged,
+              isExpanded: true,
+              icon: const Padding(
+                padding: EdgeInsets.only(right: 12),
+                child: Icon(
+                  Icons.expand_more,
+                  color: Color(0xFF5B7AE8),
+                  size: 24,
                 ),
               ),
-            )).toList(),
-            onChanged: onChanged,
-            isExpanded: true,
-            icon: const Padding(
-              padding: EdgeInsets.only(right: 12),
-              child: Icon(
-                Icons.expand_more,
-                color: Color(0xFF5B7AE8),
-                size: 24,
-              ),
+              dropdownColor: Colors.white,
             ),
-            dropdownColor: Colors.white,
           ),
-        ),
-      ],
-    );
+        ],
+      );
 }
-

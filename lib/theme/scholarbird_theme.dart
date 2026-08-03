@@ -31,20 +31,29 @@ abstract final class ScholarBirdTheme {
       surface: ScholarBirdColors.surface,
       error: const Color(0xFFDC2626),
     );
-    final textTheme = Typography.material2021().black.apply(
+    final textTheme = Typography.material2021()
+        .black
+        .apply(
           fontFamily: 'Roboto',
           bodyColor: ScholarBirdColors.ink,
           displayColor: ScholarBirdColors.ink,
-        ).copyWith(
-          headlineSmall: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
-          titleLarge: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-          titleMedium: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-          titleSmall: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        )
+        .copyWith(
+          headlineSmall:
+              const TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+          titleLarge:
+              const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+          titleMedium:
+              const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+          titleSmall:
+              const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           bodyLarge: const TextStyle(fontSize: 16, height: 1.5),
           bodyMedium: const TextStyle(fontSize: 14, height: 1.45),
           bodySmall: const TextStyle(fontSize: 12, height: 1.4),
-          labelLarge: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
-          labelMedium: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+          labelLarge:
+              const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+          labelMedium:
+              const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
         );
 
     final outline = OutlineInputBorder(
@@ -87,7 +96,8 @@ abstract final class ScholarBirdTheme {
           minimumSize: const Size(0, 48),
           backgroundColor: ScholarBirdColors.primary,
           foregroundColor: Colors.white,
-          disabledBackgroundColor: ScholarBirdColors.primary.withValues(alpha: .45),
+          disabledBackgroundColor:
+              ScholarBirdColors.primary.withValues(alpha: .45),
           disabledForegroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(
@@ -95,7 +105,8 @@ abstract final class ScholarBirdTheme {
             vertical: ScholarBirdSpacing.small,
           ),
           textStyle: textTheme.labelLarge,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(_radius)),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(_radius)),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -108,14 +119,16 @@ abstract final class ScholarBirdTheme {
           ),
           textStyle: textTheme.labelLarge,
           side: const BorderSide(color: ScholarBirdColors.primary),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(_radius)),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(_radius)),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: ScholarBirdColors.primary,
           textStyle: textTheme.labelLarge,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(_radius)),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(_radius)),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -125,11 +138,14 @@ abstract final class ScholarBirdTheme {
           horizontal: ScholarBirdSpacing.medium,
           vertical: ScholarBirdSpacing.medium,
         ),
-        labelStyle: textTheme.bodyMedium?.copyWith(color: ScholarBirdColors.body),
-        hintStyle: textTheme.bodyMedium?.copyWith(color: ScholarBirdColors.muted),
+        labelStyle:
+            textTheme.bodyMedium?.copyWith(color: ScholarBirdColors.body),
+        hintStyle:
+            textTheme.bodyMedium?.copyWith(color: ScholarBirdColors.muted),
         enabledBorder: outline,
         focusedBorder: outline.copyWith(
-          borderSide: const BorderSide(color: ScholarBirdColors.primary, width: 2),
+          borderSide:
+              const BorderSide(color: ScholarBirdColors.primary, width: 2),
         ),
         errorBorder: outline.copyWith(
           borderSide: const BorderSide(color: Color(0xFFDC2626)),

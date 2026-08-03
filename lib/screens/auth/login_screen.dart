@@ -33,7 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FB),
       body: SafeArea(
@@ -61,7 +61,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF0052CC).withValues(alpha: 0.2),
+                            color:
+                                const Color(0xFF0052CC).withValues(alpha: 0.2),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
                           ),
@@ -70,11 +71,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Image.asset(
                         'assets/images/Logo_ScholarBird.png',
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => const Icon(
-                            Icons.school_outlined,
-                            size: 50,
-                            color: Colors.white,
-                          ),
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(
+                          Icons.school_outlined,
+                          size: 50,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -141,9 +143,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   prefixIcon: Icons.lock_outline,
                   obscureText: _obscurePassword,
                   suffixIcon: GestureDetector(
-                    onTap: () => setState(() => _obscurePassword = !_obscurePassword),
+                    onTap: () =>
+                        setState(() => _obscurePassword = !_obscurePassword),
                     child: Icon(
-                      _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                      _obscurePassword
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
                       color: const Color(0xFF5B7AE8),
                     ),
                   ),
@@ -157,7 +162,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: TextButton(
                     onPressed: _handleForgotPassword,
                     style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 0, vertical: 4),
                       minimumSize: const Size.square(20),
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
@@ -180,7 +186,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   onPressed: _isLoading ? null : _handleLogin,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF5B7AE8),
-                    disabledBackgroundColor: const Color(0xFF5B7AE8).withValues(alpha: 0.5),
+                    disabledBackgroundColor:
+                        const Color(0xFF5B7AE8).withValues(alpha: 0.5),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -193,7 +200,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           width: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
                       : const Text(
@@ -249,7 +257,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    side: const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
+                    side:
+                        const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -323,7 +332,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _handleForgotPassword() {
     final emailController = TextEditingController();
-    
+
     showDialog(
       context: context,
       builder: (BuildContext context) => AlertDialog(
@@ -331,7 +340,8 @@ class _LoginScreenState extends State<LoginScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Enter your email address to receive a password reset link.'),
+            const Text(
+                'Enter your email address to receive a password reset link.'),
             const SizedBox(height: 16),
             TextField(
               controller: emailController,
@@ -360,36 +370,39 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             onPressed: () async {
               final email = emailController.text.trim();
-              
+
               if (email.isEmpty) {
                 Navigator.of(context).pop();
                 _showErrorDialog('Please enter your email address');
                 return;
               }
-              
+
               try {
-                await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
-                
+                await FirebaseAuth.instance
+                    .sendPasswordResetEmail(email: email);
+
                 if (mounted) {
                   Navigator.of(context).pop();
                   emailController.dispose();
-                  _showSuccessDialog('Password reset email sent to $email. Check your inbox.');
+                  _showSuccessDialog(
+                      'Password reset email sent to $email. Check your inbox.');
                 }
               } catch (e) {
                 Navigator.of(context).pop();
                 emailController.dispose();
-                
+
                 var errorMessage = 'Failed to send reset email';
                 final errorStr = e.toString().toLowerCase();
-                
+
                 if (errorStr.contains('user-not-found')) {
                   errorMessage = 'No account found with this email address';
                 } else if (errorStr.contains('invalid-email')) {
                   errorMessage = 'Invalid email address';
                 } else if (errorStr.contains('too-many-requests')) {
-                  errorMessage = 'Too many reset requests. Please try again later';
+                  errorMessage =
+                      'Too many reset requests. Please try again later';
                 }
-                
+
                 if (mounted) {
                   _showErrorDialog(errorMessage);
                 }
@@ -419,14 +432,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       print('🔑 Attempting to log in with email: $email');
-      
+
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
 
       print('✅ Login successful, navigating to home');
-      
+
       final route = await RoleNavigation.routeForUser(
         FirebaseAuth.instance.currentUser!.uid,
       );
@@ -438,13 +451,16 @@ class _LoginScreenState extends State<LoginScreen> {
       print('❌ Error: ${e.toString()}');
       var errorMessage = 'Login failed: Please try again';
       final errorStr = e.toString().toLowerCase();
-      
+
       // Parse error from string (avoid type checks which fail on web)
-      if (errorStr.contains('user-not-found') || errorStr.contains('not found')) {
+      if (errorStr.contains('user-not-found') ||
+          errorStr.contains('not found')) {
         errorMessage = 'User not found. Please check your email';
-      } else if (errorStr.contains('wrong-password') || errorStr.contains('wrong password')) {
+      } else if (errorStr.contains('wrong-password') ||
+          errorStr.contains('wrong password')) {
         errorMessage = 'Incorrect password';
-      } else if (errorStr.contains('invalid-credential') || errorStr.contains('invalid email')) {
+      } else if (errorStr.contains('invalid-credential') ||
+          errorStr.contains('invalid email')) {
         errorMessage = 'Invalid email or password';
       } else if (errorStr.contains('user-disabled')) {
         errorMessage = 'This account has been disabled';
@@ -460,7 +476,7 @@ class _LoginScreenState extends State<LoginScreen> {
           errorMessage = 'Login failed: $firstLine';
         }
       }
-      
+
       if (mounted) {
         _showErrorDialog(errorMessage);
       }
@@ -506,7 +522,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
 // Reusable Custom TextField Widget
 class CustomTextField extends StatelessWidget {
-
   const CustomTextField({
     required this.controller,
     required this.hintText,
@@ -529,51 +544,52 @@ class CustomTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => TextField(
-      controller: controller,
-      obscureText: obscureText,
-      keyboardType: keyboardType,
-      maxLines: obscureText ? 1 : maxLines,
-      decoration: InputDecoration(
-        hintText: hintText,
-        hintStyle: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w400,
-          color: Color(0xFFB4BAC4),
+        controller: controller,
+        obscureText: obscureText,
+        keyboardType: keyboardType,
+        maxLines: obscureText ? 1 : maxLines,
+        decoration: InputDecoration(
+          hintText: hintText,
+          hintStyle: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+            color: Color(0xFFB4BAC4),
+          ),
+          prefixIcon: Icon(
+            prefixIcon,
+            color: const Color(0xFF5B7AE8),
+            size: 22,
+          ),
+          suffixIcon: suffixIcon != null
+              ? Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: suffixIcon,
+                )
+              : null,
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFF5B7AE8), width: 2),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFFEF4444), width: 2),
+          ),
         ),
-        prefixIcon: Icon(
-          prefixIcon,
-          color: const Color(0xFF5B7AE8),
-          size: 22,
-        ),
-        suffixIcon: suffixIcon != null
-            ? Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: suffixIcon,
-              )
-            : null,
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF5B7AE8), width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFEF4444), width: 2),
-        ),
-      ),
-    );
+      );
 }

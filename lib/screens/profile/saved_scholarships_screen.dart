@@ -14,7 +14,8 @@ class SavedScholarshipsScreen extends StatefulWidget {
   const SavedScholarshipsScreen({super.key});
 
   @override
-  State<SavedScholarshipsScreen> createState() => _SavedScholarshipsScreenState();
+  State<SavedScholarshipsScreen> createState() =>
+      _SavedScholarshipsScreenState();
 }
 
 class _SavedScholarshipsScreenState extends State<SavedScholarshipsScreen> {
@@ -62,7 +63,8 @@ class _SavedScholarshipsScreenState extends State<SavedScholarshipsScreen> {
         return false;
       }
 
-      if (_countryFilter.isNotEmpty && country != _countryFilter.toLowerCase()) {
+      if (_countryFilter.isNotEmpty &&
+          country != _countryFilter.toLowerCase()) {
         return false;
       }
 
@@ -76,13 +78,21 @@ class _SavedScholarshipsScreenState extends State<SavedScholarshipsScreen> {
     filtered.sort((a, b) {
       switch (_sortOption) {
         case _SavedSortOption.newest:
-          return _parseSavedAt(b['savedAt']).compareTo(_parseSavedAt(a['savedAt']));
+          return _parseSavedAt(b['savedAt'])
+              .compareTo(_parseSavedAt(a['savedAt']));
         case _SavedSortOption.deadline:
-          return _parseDeadline(a['deadline']).compareTo(_parseDeadline(b['deadline']));
+          return _parseDeadline(a['deadline'])
+              .compareTo(_parseDeadline(b['deadline']));
         case _SavedSortOption.country:
-          return (a['country'] ?? '').toString().toLowerCase().compareTo((b['country'] ?? '').toString().toLowerCase());
+          return (a['country'] ?? '')
+              .toString()
+              .toLowerCase()
+              .compareTo((b['country'] ?? '').toString().toLowerCase());
         case _SavedSortOption.degree:
-          return (a['degree'] ?? '').toString().toLowerCase().compareTo((b['degree'] ?? '').toString().toLowerCase());
+          return (a['degree'] ?? '')
+              .toString()
+              .toLowerCase()
+              .compareTo((b['degree'] ?? '').toString().toLowerCase());
       }
     });
 
@@ -106,17 +116,13 @@ class _SavedScholarshipsScreenState extends State<SavedScholarshipsScreen> {
 
     await SavedScholarshipsService.instance.removeMany(ids);
     if (!mounted) return;
-    setState(() {
-      _selectedIds.clear();
-    });
+    setState(_selectedIds.clear);
   }
 
   Future<void> _clearAll() async {
     await SavedScholarshipsService.instance.clearAllSaved();
     if (!mounted) return;
-    setState(() {
-      _selectedIds.clear();
-    });
+    setState(_selectedIds.clear);
   }
 
   void _toggleSelection(String id) {
@@ -141,7 +147,8 @@ class _SavedScholarshipsScreenState extends State<SavedScholarshipsScreen> {
         centerTitle: true,
         title: const Text(
           'Saved Scholarships',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: sbText),
+          style: TextStyle(
+              fontSize: 20, fontWeight: FontWeight.w600, color: sbText),
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded, color: sbText),
@@ -157,10 +164,15 @@ class _SavedScholarshipsScreenState extends State<SavedScholarshipsScreen> {
                   context: context,
                   builder: (_) => AlertDialog(
                     title: const Text('Remove selected?'),
-                    content: const Text('This removes the selected saved scholarships from your account.'),
+                    content: const Text(
+                        'This removes the selected saved scholarships from your account.'),
                     actions: [
-                      TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-                      TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Remove')),
+                      TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Cancel')),
+                      TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text('Remove')),
                     ],
                   ),
                 );
@@ -171,7 +183,9 @@ class _SavedScholarshipsScreenState extends State<SavedScholarshipsScreen> {
             ),
           IconButton(
             tooltip: _gridMode ? 'List view' : 'Grid view',
-            icon: Icon(_gridMode ? Icons.view_list_outlined : Icons.grid_view_outlined),
+            icon: Icon(_gridMode
+                ? Icons.view_list_outlined
+                : Icons.grid_view_outlined),
             onPressed: () => setState(() => _gridMode = !_gridMode),
           ),
         ],
@@ -180,11 +194,15 @@ class _SavedScholarshipsScreenState extends State<SavedScholarshipsScreen> {
           ? const Center(
               child: Text(
                 'Please log in to view saved scholarships.',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: sbSecondaryText),
+                style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    color: sbSecondaryText),
               ),
             )
           : StreamBuilder<List<Map<String, dynamic>>>(
-              stream: SavedScholarshipsService.instance.watchSavedScholarshipsWithFallback(),
+              stream: SavedScholarshipsService.instance
+                  .watchSavedScholarshipsWithFallback(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return const ProfileEmptyState(
@@ -194,7 +212,8 @@ class _SavedScholarshipsScreenState extends State<SavedScholarshipsScreen> {
                   );
                 }
 
-                final rawItems = snapshot.data ?? const <Map<String, dynamic>>[];
+                final rawItems =
+                    snapshot.data ?? const <Map<String, dynamic>>[];
                 final items = _filterAndSort(rawItems);
 
                 if (rawItems.isEmpty) {
@@ -259,10 +278,26 @@ class _SavedScholarshipsScreenState extends State<SavedScholarshipsScreen> {
                                 spacing: 10,
                                 runSpacing: 10,
                                 children: [
-                                  _filterChip('Newest saved', _sortOption == _SavedSortOption.newest, () => setState(() => _sortOption = _SavedSortOption.newest)),
-                                  _filterChip('Deadline', _sortOption == _SavedSortOption.deadline, () => setState(() => _sortOption = _SavedSortOption.deadline)),
-                                  _filterChip('Country', _sortOption == _SavedSortOption.country, () => setState(() => _sortOption = _SavedSortOption.country)),
-                                  _filterChip('Degree', _sortOption == _SavedSortOption.degree, () => setState(() => _sortOption = _SavedSortOption.degree)),
+                                  _filterChip(
+                                      'Newest saved',
+                                      _sortOption == _SavedSortOption.newest,
+                                      () => setState(() => _sortOption =
+                                          _SavedSortOption.newest)),
+                                  _filterChip(
+                                      'Deadline',
+                                      _sortOption == _SavedSortOption.deadline,
+                                      () => setState(() => _sortOption =
+                                          _SavedSortOption.deadline)),
+                                  _filterChip(
+                                      'Country',
+                                      _sortOption == _SavedSortOption.country,
+                                      () => setState(() => _sortOption =
+                                          _SavedSortOption.country)),
+                                  _filterChip(
+                                      'Degree',
+                                      _sortOption == _SavedSortOption.degree,
+                                      () => setState(() => _sortOption =
+                                          _SavedSortOption.degree)),
                                 ],
                               ),
                               const SizedBox(height: 12),
@@ -273,7 +308,8 @@ class _SavedScholarshipsScreenState extends State<SavedScholarshipsScreen> {
                                       label: 'Country',
                                       value: _countryFilter,
                                       options: countryOptions,
-                                      onChanged: (value) => setState(() => _countryFilter = value ?? ''),
+                                      onChanged: (value) => setState(
+                                          () => _countryFilter = value ?? ''),
                                     ),
                                   ),
                                   const SizedBox(width: 10),
@@ -282,7 +318,8 @@ class _SavedScholarshipsScreenState extends State<SavedScholarshipsScreen> {
                                       label: 'Degree',
                                       value: _degreeFilter,
                                       options: degreeOptions,
-                                      onChanged: (value) => setState(() => _degreeFilter = value ?? ''),
+                                      onChanged: (value) => setState(
+                                          () => _degreeFilter = value ?? ''),
                                     ),
                                   ),
                                 ],
@@ -294,19 +331,33 @@ class _SavedScholarshipsScreenState extends State<SavedScholarshipsScreen> {
                                     Expanded(
                                       child: Text(
                                         '${_selectedIds.length} selected',
-                                        style: const TextStyle(fontWeight: FontWeight.w600, color: sbText),
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            color: sbText),
                                       ),
                                     ),
                                     TextButton(
                                       onPressed: () async {
-                                        final confirmed = await showDialog<bool>(
+                                        final confirmed =
+                                            await showDialog<bool>(
                                           context: context,
                                           builder: (_) => AlertDialog(
-                                            title: const Text('Clear all saved?'),
-                                            content: const Text('This removes every saved scholarship from your account.'),
+                                            title:
+                                                const Text('Clear all saved?'),
+                                            content: const Text(
+                                                'This removes every saved scholarship from your account.'),
                                             actions: [
-                                              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-                                              TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Clear all')),
+                                              TextButton(
+                                                  onPressed: () =>
+                                                      Navigator.pop(
+                                                          context, false),
+                                                  child: const Text('Cancel')),
+                                              TextButton(
+                                                  onPressed: () =>
+                                                      Navigator.pop(
+                                                          context, true),
+                                                  child:
+                                                      const Text('Clear all')),
                                             ],
                                           ),
                                         );
@@ -325,9 +376,11 @@ class _SavedScholarshipsScreenState extends State<SavedScholarshipsScreen> {
                       ),
                       if (_gridMode)
                         SliverPadding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 8),
                           sliver: SliverGrid(
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: 2,
                               childAspectRatio: 0.72,
                               crossAxisSpacing: 12,
@@ -341,7 +394,8 @@ class _SavedScholarshipsScreenState extends State<SavedScholarshipsScreen> {
                                   data: item,
                                   isSelected: _selectedIds.contains(id),
                                   selectionMode: _selectedIds.isNotEmpty,
-                                  onTap: () => _openScholarshipDetails(context, id, item),
+                                  onTap: () => _openScholarshipDetails(
+                                      context, id, item),
                                   onLongPress: () => _toggleSelection(id),
                                 );
                               },
@@ -351,7 +405,8 @@ class _SavedScholarshipsScreenState extends State<SavedScholarshipsScreen> {
                         )
                       else
                         SliverPadding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 8),
                           sliver: SliverList(
                             delegate: SliverChildBuilderDelegate(
                               (context, index) {
@@ -363,7 +418,8 @@ class _SavedScholarshipsScreenState extends State<SavedScholarshipsScreen> {
                                     data: item,
                                     isSelected: _selectedIds.contains(id),
                                     selectionMode: _selectedIds.isNotEmpty,
-                                    onTap: () => _openScholarshipDetails(context, id, item),
+                                    onTap: () => _openScholarshipDetails(
+                                        context, id, item),
                                     onLongPress: () => _toggleSelection(id),
                                   ),
                                 );
@@ -380,38 +436,37 @@ class _SavedScholarshipsScreenState extends State<SavedScholarshipsScreen> {
     );
   }
 
-  Widget _filterChip(String label, bool selected, VoidCallback onTap) {
-    return FilterChip(
-      label: Text(label),
-      selected: selected,
-      onSelected: (_) => onTap(),
-    );
-  }
+  Widget _filterChip(String label, bool selected, VoidCallback onTap) =>
+      FilterChip(
+        label: Text(label),
+        selected: selected,
+        onSelected: (_) => onTap(),
+      );
 
   Widget _dropdownFilter({
     required String label,
     required String value,
     required List<String> options,
     required ValueChanged<String?> onChanged,
-  }) {
-    return DropdownButtonFormField<String>(
-      initialValue: value.isEmpty ? null : value,
-      decoration: InputDecoration(
-        labelText: label,
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide.none,
+  }) =>
+      DropdownButtonFormField<String>(
+        initialValue: value.isEmpty ? null : value,
+        decoration: InputDecoration(
+          labelText: label,
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none,
+          ),
         ),
-      ),
-      items: [
-        const DropdownMenuItem<String>(value: '', child: Text('All')),
-        ...options.map((option) => DropdownMenuItem<String>(value: option, child: Text(option))),
-      ],
-      onChanged: onChanged,
-    );
-  }
+        items: [
+          const DropdownMenuItem<String>(value: '', child: Text('All')),
+          ...options.map((option) =>
+              DropdownMenuItem<String>(value: option, child: Text(option))),
+        ],
+        onChanged: onChanged,
+      );
 
   Future<void> _openScholarshipDetails(
     BuildContext context,
@@ -426,7 +481,10 @@ class _SavedScholarshipsScreenState extends State<SavedScholarshipsScreen> {
     }
 
     try {
-      final doc = await FirebaseFirestore.instance.collection('scholarships').doc(scholarshipId).get();
+      final doc = await FirebaseFirestore.instance
+          .collection('scholarships')
+          .doc(scholarshipId)
+          .get();
       if (!context.mounted) return;
 
       final data = <String, dynamic>{

@@ -86,9 +86,11 @@ class _AcademicProfileScreenState extends State<AcademicProfileScreen> {
         } else {
           _researchController.text = (researchValue ?? '').toString();
         }
-        _publicationsController.text = (data['publicationCount'] ?? '').toString();
+        _publicationsController.text =
+            (data['publicationCount'] ?? '').toString();
         _workController.text = (data['workExperienceYears'] ?? '').toString();
-        _graduationYearController.text = (data['graduationYear'] ?? '').toString();
+        _graduationYearController.text =
+            (data['graduationYear'] ?? '').toString();
         _backlogsController.text = (data['backlogs'] ?? '').toString();
         final englishMediumValue = data['englishMedium'];
         if (englishMediumValue is bool) {
@@ -176,8 +178,10 @@ class _AcademicProfileScreenState extends State<AcademicProfileScreen> {
         'cgpaScale': cgpaScale,
         'ielts': double.tryParse(_ieltsController.text.trim()) ?? 0,
         'toefl': toefl,
-        'researchExperience': _researchController.text.trim().toLowerCase() == 'yes',
-        'publicationCount': int.tryParse(_publicationsController.text.trim()) ?? 0,
+        'researchExperience':
+            _researchController.text.trim().toLowerCase() == 'yes',
+        'publicationCount':
+            int.tryParse(_publicationsController.text.trim()) ?? 0,
         'workExperienceYears':
             double.tryParse(_workController.text.trim()) ?? 0,
         'graduationYear': graduationYear,
@@ -234,7 +238,8 @@ class _AcademicProfileScreenState extends State<AcademicProfileScreen> {
             ? const Center(child: CircularProgressIndicator(color: sbPrimary))
             : SafeArea(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -267,21 +272,24 @@ class _AcademicProfileScreenState extends State<AcademicProfileScreen> {
                         controller: _cgpaController,
                         hintText: 'CGPA',
                         prefixIcon: Icons.grade_outlined,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
                       ),
                       const SizedBox(height: 16),
                       ProfileTextField(
                         controller: _cgpaScaleController,
                         hintText: 'CGPA Scale (e.g., 4.0, 5.0)',
                         prefixIcon: Icons.tune_outlined,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
                       ),
                       const SizedBox(height: 16),
                       ProfileTextField(
                         controller: _ieltsController,
                         hintText: 'IELTS Score',
                         prefixIcon: Icons.record_voice_over_outlined,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
                       ),
                       const SizedBox(height: 16),
                       ProfileTextField(
@@ -294,7 +302,8 @@ class _AcademicProfileScreenState extends State<AcademicProfileScreen> {
                       ProfileDropdownField(
                         label: 'Research Experience',
                         hint: 'Select Yes or No',
-                        value: _yesNoOptions.contains(_researchController.text.trim())
+                        value: _yesNoOptions
+                                .contains(_researchController.text.trim())
                             ? _researchController.text.trim()
                             : null,
                         items: _yesNoOptions,
@@ -316,8 +325,8 @@ class _AcademicProfileScreenState extends State<AcademicProfileScreen> {
                         controller: _workController,
                         hintText: 'Work Experience (Years)',
                         prefixIcon: Icons.work_outline,
-                        keyboardType:
-                            const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
                       ),
                       const SizedBox(height: 16),
                       ProfileTextField(
@@ -330,7 +339,8 @@ class _AcademicProfileScreenState extends State<AcademicProfileScreen> {
                       ProfileDropdownField(
                         label: 'English Medium',
                         hint: 'Select Yes or No',
-                        value: _yesNoOptions.contains(_englishMediumController.text.trim())
+                        value: _yesNoOptions
+                                .contains(_englishMediumController.text.trim())
                             ? _englishMediumController.text.trim()
                             : null,
                         items: _yesNoOptions,

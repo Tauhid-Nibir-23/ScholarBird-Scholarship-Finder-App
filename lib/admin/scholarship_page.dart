@@ -81,8 +81,10 @@ class _ScholarshipPageState extends State<ScholarshipPage> {
   }
 
   @override
-  Widget build(BuildContext context) => StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-        stream: FirebaseFirestore.instance.collection('scholarships').snapshots(),
+  Widget build(BuildContext context) =>
+      StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream:
+            FirebaseFirestore.instance.collection('scholarships').snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return const Center(child: Text('Unable to load scholarships.'));
@@ -118,12 +120,13 @@ class _ScholarshipPageState extends State<ScholarshipPage> {
                                   ?.copyWith(fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 6),
-                            const Text('Create and manage scholarship opportunities.'),
+                            const Text(
+                                'Create and manage scholarship opportunities.'),
                           ],
                         ),
                       ),
                       FilledButton.icon(
-                        onPressed: () => _openForm(),
+                        onPressed: _openForm,
                         icon: const Icon(Icons.add),
                         label: const Text('Add scholarship'),
                       ),
@@ -138,7 +141,8 @@ class _ScholarshipPageState extends State<ScholarshipPage> {
                         children: [
                           TextField(
                             controller: _searchController,
-                            onChanged: (value) => setState(() => _searchQuery = value.trim()),
+                            onChanged: (value) =>
+                                setState(() => _searchQuery = value.trim()),
                             decoration: const InputDecoration(
                               prefixIcon: Icon(Icons.search),
                               hintText: 'Search by title, country, or field',
@@ -146,7 +150,8 @@ class _ScholarshipPageState extends State<ScholarshipPage> {
                             ),
                           ),
                           const SizedBox(height: 20),
-                          if (snapshot.connectionState == ConnectionState.waiting)
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting)
                             const Padding(
                               padding: EdgeInsets.all(32),
                               child: CircularProgressIndicator(),
@@ -158,15 +163,22 @@ class _ScholarshipPageState extends State<ScholarshipPage> {
                             )
                           else
                             LayoutBuilder(
-                              builder: (context, constraints) => constraints.maxWidth < 760
+                              builder: (context, constraints) => constraints
+                                          .maxWidth <
+                                      760
                                   ? Column(
                                       children: scholarships
                                           .map((document) => _ScholarshipCard(
                                                 document: document,
-                                                onEdit: () => _openForm(document),
-                                                onFeature: () => _toggleValue(document, 'isFeatured'),
-                                                onHide: () => _toggleValue(document, 'isHidden'),
-                                                onDelete: () => _deleteScholarship(document),
+                                                onEdit: () =>
+                                                    _openForm(document),
+                                                onFeature: () => _toggleValue(
+                                                    document, 'isFeatured'),
+                                                onHide: () => _toggleValue(
+                                                    document, 'isHidden'),
+                                                onDelete: () =>
+                                                    _deleteScholarship(
+                                                        document),
                                               ))
                                           .toList(),
                                     )
@@ -174,7 +186,8 @@ class _ScholarshipPageState extends State<ScholarshipPage> {
                                       scrollDirection: Axis.horizontal,
                                       child: DataTable(
                                         columns: const [
-                                          DataColumn(label: Text('Scholarship')),
+                                          DataColumn(
+                                              label: Text('Scholarship')),
                                           DataColumn(label: Text('Country')),
                                           DataColumn(label: Text('Deadline')),
                                           DataColumn(label: Text('Visibility')),
@@ -182,19 +195,73 @@ class _ScholarshipPageState extends State<ScholarshipPage> {
                                         ],
                                         rows: scholarships.map((document) {
                                           final data = document.data();
-                                          final hidden = data['isHidden'] == true;
-                                          final featured = data['isFeatured'] == true;
+                                          final hidden =
+                                              data['isHidden'] == true;
+                                          final featured =
+                                              data['isFeatured'] == true;
                                           return DataRow(cells: [
-                                            DataCell(Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [Text(data['title']?.toString() ?? 'Untitled'), if (featured) const Text('Featured', style: TextStyle(fontSize: 12))])),
-                                            DataCell(Text(data['country']?.toString() ?? '—')),
-                                            DataCell(Text(data['deadline']?.toString() ?? '—')),
-                                            DataCell(Chip(label: Text(hidden ? 'Hidden' : 'Visible'))),
-                                            DataCell(Row(mainAxisSize: MainAxisSize.min, children: [
-                                              IconButton(onPressed: () => _openForm(document), icon: const Icon(Icons.edit_outlined), tooltip: 'Edit'),
-                                              IconButton(onPressed: () => _toggleValue(document, 'isFeatured'), icon: Icon(featured ? Icons.star : Icons.star_outline), tooltip: featured ? 'Remove feature' : 'Feature'),
-                                              IconButton(onPressed: () => _toggleValue(document, 'isHidden'), icon: Icon(hidden ? Icons.visibility : Icons.visibility_off), tooltip: hidden ? 'Show scholarship' : 'Hide scholarship'),
-                                              IconButton(onPressed: () => _deleteScholarship(document), icon: const Icon(Icons.delete_outline), tooltip: 'Delete'),
-                                            ])),
+                                            DataCell(Column(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(data['title']
+                                                          ?.toString() ??
+                                                      'Untitled'),
+                                                  if (featured)
+                                                    const Text('Featured',
+                                                        style: TextStyle(
+                                                            fontSize: 12))
+                                                ])),
+                                            DataCell(Text(
+                                                data['country']?.toString() ??
+                                                    '—')),
+                                            DataCell(Text(
+                                                data['deadline']?.toString() ??
+                                                    '—')),
+                                            DataCell(Chip(
+                                                label: Text(hidden
+                                                    ? 'Hidden'
+                                                    : 'Visible'))),
+                                            DataCell(Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  IconButton(
+                                                      onPressed: () =>
+                                                          _openForm(document),
+                                                      icon: const Icon(
+                                                          Icons.edit_outlined),
+                                                      tooltip: 'Edit'),
+                                                  IconButton(
+                                                      onPressed: () =>
+                                                          _toggleValue(document,
+                                                              'isFeatured'),
+                                                      icon: Icon(featured
+                                                          ? Icons.star
+                                                          : Icons.star_outline),
+                                                      tooltip: featured
+                                                          ? 'Remove feature'
+                                                          : 'Feature'),
+                                                  IconButton(
+                                                      onPressed: () =>
+                                                          _toggleValue(document,
+                                                              'isHidden'),
+                                                      icon: Icon(hidden
+                                                          ? Icons.visibility
+                                                          : Icons
+                                                              .visibility_off),
+                                                      tooltip: hidden
+                                                          ? 'Show scholarship'
+                                                          : 'Hide scholarship'),
+                                                  IconButton(
+                                                      onPressed: () =>
+                                                          _deleteScholarship(
+                                                              document),
+                                                      icon: const Icon(
+                                                          Icons.delete_outline),
+                                                      tooltip: 'Delete'),
+                                                ])),
                                           ]);
                                         }).toList(),
                                       ),
@@ -213,7 +280,12 @@ class _ScholarshipPageState extends State<ScholarshipPage> {
 }
 
 class _ScholarshipCard extends StatelessWidget {
-  const _ScholarshipCard({required this.document, required this.onEdit, required this.onFeature, required this.onHide, required this.onDelete});
+  const _ScholarshipCard(
+      {required this.document,
+      required this.onEdit,
+      required this.onFeature,
+      required this.onHide,
+      required this.onDelete});
 
   final DocumentSnapshot<Map<String, dynamic>> document;
   final VoidCallback onEdit;
@@ -231,9 +303,18 @@ class _ScholarshipCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 14),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-        leading: Container(width: 44, height: 44, decoration: BoxDecoration(color: AdminPalette.primary.withValues(alpha: .1), borderRadius: BorderRadius.circular(14)), child: const Icon(Icons.school_outlined, color: AdminPalette.primary)),
+        leading: Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+                color: AdminPalette.primary.withValues(alpha: .1),
+                borderRadius: BorderRadius.circular(14)),
+            child:
+                const Icon(Icons.school_outlined, color: AdminPalette.primary)),
         title: Text(data['title']?.toString() ?? 'Untitled'),
-        subtitle: Text('${data['country'] ?? '—'} • ${data['deadline'] ?? 'No deadline'}', style: const TextStyle(color: AdminPalette.body)),
+        subtitle: Text(
+            '${data['country'] ?? '—'} • ${data['deadline'] ?? 'No deadline'}',
+            style: const TextStyle(color: AdminPalette.body)),
         trailing: PopupMenuButton<String>(
           onSelected: (value) {
             if (value == 'edit') onEdit();
@@ -243,8 +324,13 @@ class _ScholarshipCard extends StatelessWidget {
           },
           itemBuilder: (_) => [
             const PopupMenuItem(value: 'edit', child: Text('Edit')),
-            PopupMenuItem(value: 'feature', child: Text(featured ? 'Remove feature' : 'Feature scholarship')),
-            PopupMenuItem(value: 'hide', child: Text(hidden ? 'Show scholarship' : 'Hide scholarship')),
+            PopupMenuItem(
+                value: 'feature',
+                child:
+                    Text(featured ? 'Remove feature' : 'Feature scholarship')),
+            PopupMenuItem(
+                value: 'hide',
+                child: Text(hidden ? 'Show scholarship' : 'Hide scholarship')),
             const PopupMenuItem(value: 'delete', child: Text('Delete')),
           ],
         ),

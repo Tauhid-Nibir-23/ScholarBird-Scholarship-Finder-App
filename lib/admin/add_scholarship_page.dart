@@ -75,7 +75,8 @@ class _AddScholarshipPageState extends State<AddScholarshipPage> {
       lastDate: DateTime(2100),
     );
     if (selected != null) {
-      setState(() => _deadlineController.text = '${selected.day.toString().padLeft(2, '0')}/${selected.month.toString().padLeft(2, '0')}/${selected.year}');
+      setState(() => _deadlineController.text =
+          '${selected.day.toString().padLeft(2, '0')}/${selected.month.toString().padLeft(2, '0')}/${selected.year}');
     }
   }
 
@@ -125,56 +126,122 @@ class _AddScholarshipPageState extends State<AddScholarshipPage> {
   Widget build(BuildContext context) => Theme(
         data: AdminTheme.data(context),
         child: Scaffold(
-        appBar: AppBar(title: Text(_isEditing ? 'Edit Scholarship' : 'Add Scholarship')),
-        body: SafeArea(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 900),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Form(
-                  key: _formKey,
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(_isEditing ? 'Update scholarship details' : 'Create a new opportunity', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    const Text('Fields marked with an asterisk are required.'),
-                    const SizedBox(height: 28),
-                    _FormSection(title: 'Core details', children: [
-                      _field(_titleController, 'Title', required: true),
-                      _field(_countryController, 'Country', required: true),
-                      _field(_degreeController, 'Degree', required: true),
-                      _field(_fieldController, 'Field of study', required: true),
-                      TextFormField(controller: _deadlineController, readOnly: true, onTap: _selectDeadline, decoration: const InputDecoration(labelText: 'Deadline *', suffixIcon: Icon(Icons.calendar_today), border: OutlineInputBorder()), validator: _required),
-                      _field(_fundingController, 'Funding', required: true),
-                    ]),
-                    const SizedBox(height: 20),
-                    _FormSection(title: 'Eligibility & links', children: [
-                      _field(_minimumCgpaController, 'Minimum CGPA', keyboardType: const TextInputType.numberWithOptions(decimal: true)),
-                      _field(_imageUrlController, 'Image URL', keyboardType: TextInputType.url),
-                      _field(_officialLinkController, 'Official Link', keyboardType: TextInputType.url),
-                      SwitchListTile(contentPadding: EdgeInsets.zero, value: _ieltsRequired, onChanged: (value) => setState(() => _ieltsRequired = value), title: const Text('IELTS Required')),
-                      SwitchListTile(contentPadding: EdgeInsets.zero, value: _researchRequired, onChanged: (value) => setState(() => _researchRequired = value), title: const Text('Research Required')),
-                    ]),
-                    const SizedBox(height: 20),
-                    _FormSection(title: 'Description', children: [
-                      TextFormField(controller: _descriptionController, minLines: 6, maxLines: 10, decoration: const InputDecoration(labelText: 'Description *', alignLabelWithHint: true, border: OutlineInputBorder()), validator: _required),
-                    ]),
-                    const SizedBox(height: 28),
-                    Align(alignment: Alignment.centerRight, child: FilledButton.icon(onPressed: _isSaving ? null : _save, icon: _isSaving ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.save), label: Text(_isSaving ? 'Saving...' : 'Save scholarship'))),
-                  ]),
+          appBar: AppBar(
+              title: Text(_isEditing ? 'Edit Scholarship' : 'Add Scholarship')),
+          body: SafeArea(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 900),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                              _isEditing
+                                  ? 'Update scholarship details'
+                                  : 'Create a new opportunity',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineSmall
+                                  ?.copyWith(fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 8),
+                          const Text(
+                              'Fields marked with an asterisk are required.'),
+                          const SizedBox(height: 28),
+                          _FormSection(title: 'Core details', children: [
+                            _field(_titleController, 'Title', required: true),
+                            _field(_countryController, 'Country',
+                                required: true),
+                            _field(_degreeController, 'Degree', required: true),
+                            _field(_fieldController, 'Field of study',
+                                required: true),
+                            TextFormField(
+                                controller: _deadlineController,
+                                readOnly: true,
+                                onTap: _selectDeadline,
+                                decoration: const InputDecoration(
+                                    labelText: 'Deadline *',
+                                    suffixIcon: Icon(Icons.calendar_today),
+                                    border: OutlineInputBorder()),
+                                validator: _required),
+                            _field(_fundingController, 'Funding',
+                                required: true),
+                          ]),
+                          const SizedBox(height: 20),
+                          _FormSection(title: 'Eligibility & links', children: [
+                            _field(_minimumCgpaController, 'Minimum CGPA',
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                        decimal: true)),
+                            _field(_imageUrlController, 'Image URL',
+                                keyboardType: TextInputType.url),
+                            _field(_officialLinkController, 'Official Link',
+                                keyboardType: TextInputType.url),
+                            SwitchListTile(
+                                contentPadding: EdgeInsets.zero,
+                                value: _ieltsRequired,
+                                onChanged: (value) =>
+                                    setState(() => _ieltsRequired = value),
+                                title: const Text('IELTS Required')),
+                            SwitchListTile(
+                                contentPadding: EdgeInsets.zero,
+                                value: _researchRequired,
+                                onChanged: (value) =>
+                                    setState(() => _researchRequired = value),
+                                title: const Text('Research Required')),
+                          ]),
+                          const SizedBox(height: 20),
+                          _FormSection(title: 'Description', children: [
+                            TextFormField(
+                                controller: _descriptionController,
+                                minLines: 6,
+                                maxLines: 10,
+                                decoration: const InputDecoration(
+                                    labelText: 'Description *',
+                                    alignLabelWithHint: true,
+                                    border: OutlineInputBorder()),
+                                validator: _required),
+                          ]),
+                          const SizedBox(height: 28),
+                          Align(
+                              alignment: Alignment.centerRight,
+                              child: FilledButton.icon(
+                                  onPressed: _isSaving ? null : _save,
+                                  icon: _isSaving
+                                      ? const SizedBox.square(
+                                          dimension: 18,
+                                          child: CircularProgressIndicator(
+                                              strokeWidth: 2))
+                                      : const Icon(Icons.save),
+                                  label: Text(_isSaving
+                                      ? 'Saving...'
+                                      : 'Save scholarship'))),
+                        ]),
+                  ),
                 ),
               ),
             ),
           ),
         ),
-        ),
       );
 
-  String? _required(String? value) => value == null || value.trim().isEmpty ? 'Required' : null;
+  String? _required(String? value) =>
+      value == null || value.trim().isEmpty ? 'Required' : null;
 
-  Widget _field(TextEditingController controller, String label, {bool required = false, TextInputType? keyboardType}) => Padding(
+  Widget _field(TextEditingController controller, String label,
+          {bool required = false, TextInputType? keyboardType}) =>
+      Padding(
         padding: const EdgeInsets.only(bottom: 16),
-        child: TextFormField(controller: controller, keyboardType: keyboardType, decoration: InputDecoration(labelText: required ? '$label *' : label, border: const OutlineInputBorder()), validator: required ? _required : null),
+        child: TextFormField(
+            controller: controller,
+            keyboardType: keyboardType,
+            decoration: InputDecoration(
+                labelText: required ? '$label *' : label,
+                border: const OutlineInputBorder()),
+            validator: required ? _required : null),
       );
 }
 
@@ -189,7 +256,12 @@ class _FormSection extends StatelessWidget {
         padding: EdgeInsets.zero,
         child: Padding(
           padding: const EdgeInsets.all(20),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: Theme.of(context).textTheme.titleLarge), const SizedBox(height: 20), ...children]),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(title, style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 20),
+            ...children
+          ]),
         ),
       );
 }

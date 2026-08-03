@@ -104,11 +104,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   }
 
                   final data = snapshot.data?.data() ?? {};
-                  final name = (data['name'] as String?)?.trim().isNotEmpty == true
-                      ? data['name'] as String
-                      : user?.displayName ?? 'User';
+                  final name =
+                      (data['name'] as String?)?.trim().isNotEmpty == true
+                          ? data['name'] as String
+                          : user?.displayName ?? 'User';
                   final email = user?.email ?? 'email@example.com';
-                  final department = (data['department'] as String?)?.trim() ?? '';
+                  final department =
+                      (data['department'] as String?)?.trim() ?? '';
                   final degree = (data['degree'] as String?)?.trim() ?? '';
                   final completion = _calculateCompletion(data);
 
@@ -185,7 +187,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                               const SizedBox(height: 20),
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   const Text(
                                     'Profile completion',
@@ -211,9 +214,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 child: LinearProgressIndicator(
                                   value: completion / 100,
                                   minHeight: 8,
-                                  backgroundColor: sbPrimary.withValues(alpha: 0.1),
+                                  backgroundColor:
+                                      sbPrimary.withValues(alpha: 0.1),
                                   valueColor:
-                                      const AlwaysStoppedAnimation<Color>(sbPrimary),
+                                      const AlwaysStoppedAnimation<Color>(
+                                          sbPrimary),
                                 ),
                               ),
                             ],
@@ -247,7 +252,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 title: 'Academic Profile',
                                 onTap: () => Navigator.of(context).push(
                                   MaterialPageRoute(
-                                    builder: (_) => const AcademicProfileScreen(),
+                                    builder: (_) =>
+                                        const AcademicProfileScreen(),
                                   ),
                                 ),
                               ),
@@ -257,7 +263,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 title: 'Scholarship Preferences',
                                 onTap: () => Navigator.of(context).push(
                                   MaterialPageRoute(
-                                    builder: (_) => const ScholarshipPreferencesScreen(),
+                                    builder: (_) =>
+                                        const ScholarshipPreferencesScreen(),
                                   ),
                                 ),
                               ),
@@ -267,7 +274,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 title: 'Saved Scholarships',
                                 onTap: () => Navigator.of(context).push(
                                   MaterialPageRoute(
-                                    builder: (_) => const SavedScholarshipsScreen(),
+                                    builder: (_) =>
+                                        const SavedScholarshipsScreen(),
                                   ),
                                 ),
                               ),
@@ -289,9 +297,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 onTap: () async {
                                   try {
                                     await PdfService.downloadUserGuide();
-                                    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('ScholarBird User Guide downloaded successfully.')));
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(const SnackBar(
+                                              content: Text(
+                                                  'ScholarBird User Guide downloaded successfully.')));
+                                    }
                                   } catch (_) {
-                                    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Unable to generate the User Guide. Please try again.')));
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(const SnackBar(
+                                              content: Text(
+                                                  'Unable to generate the User Guide. Please try again.')));
+                                    }
                                   }
                                 },
                               ),
@@ -348,18 +366,53 @@ class _ProfileScreenState extends State<ProfileScreen> {
           end: Alignment.centerRight,
         ),
         borderRadius: BorderRadius.circular(18),
-        boxShadow: [BoxShadow(color: sbPrimary.withValues(alpha: .18), blurRadius: 16, offset: const Offset(0, 6))],
+        boxShadow: [
+          BoxShadow(
+              color: sbPrimary.withValues(alpha: .18),
+              blurRadius: 16,
+              offset: const Offset(0, 6))
+        ],
       ),
       child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-        Container(width: 46, height: 46, padding: const EdgeInsets.all(5), decoration: BoxDecoration(color: Colors.white.withValues(alpha: .14), borderRadius: BorderRadius.circular(14)), child: ClipRRect(borderRadius: BorderRadius.circular(10), child: Image.asset('assets/images/Logo_ScholarBird.png', fit: BoxFit.cover))),
+        Container(
+            width: 46,
+            height: 46,
+            padding: const EdgeInsets.all(5),
+            decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: .14),
+                borderRadius: BorderRadius.circular(14)),
+            child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Image.asset('assets/images/Logo_ScholarBird.png',
+                    fit: BoxFit.cover))),
         const SizedBox(width: 14),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(premium ? 'ScholarBird PRO' : 'ScholarBird Free', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.white)),
+        Expanded(
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(premium ? 'ScholarBird PRO' : 'ScholarBird Free',
+              style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white)),
           const SizedBox(height: 4),
-          Text(premium ? 'Premium active - ${membership.daysRemaining} days remaining' : 'Free plan - browse and save scholarships.', style: const TextStyle(fontSize: 12, color: Color(0xFFE2E8F0))),
+          Text(
+              premium
+                  ? 'Premium active - ${membership.daysRemaining} days remaining'
+                  : 'Free plan - browse and save scholarships.',
+              style: const TextStyle(fontSize: 12, color: Color(0xFFE2E8F0))),
         ])),
         const SizedBox(width: 12),
-        InkWell(onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => premium ? const ManageSubscriptionScreen() : const PremiumUpgradeScreen())), child: Text(premium ? 'View Details' : 'Upgrade Now', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700, decoration: TextDecoration.underline))),
+        InkWell(
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => premium
+                    ? const ManageSubscriptionScreen()
+                    : const PremiumUpgradeScreen())),
+            child: Text(premium ? 'View Details' : 'Upgrade Now',
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    decoration: TextDecoration.underline))),
       ]),
     );
   }

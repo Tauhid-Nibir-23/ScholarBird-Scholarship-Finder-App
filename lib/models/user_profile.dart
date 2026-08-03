@@ -11,14 +11,8 @@ class UserProfile {
     required this.academicBackground,
   });
 
-  final String degree;
-  final double? cgpa;
-  final String country;
-  final List<String> skills;
-  final List<String> preferredStudyCountries;
-  final String academicBackground;
-
-  factory UserProfile.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+  factory UserProfile.fromFirestore(
+      DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? <String, dynamic>{};
     return UserProfile(
       degree: _text(data['education']).isNotEmpty
@@ -38,8 +32,18 @@ class UserProfile {
     );
   }
 
+  final String degree;
+  final double? cgpa;
+  final String country;
+  final List<String> skills;
+  final List<String> preferredStudyCountries;
+  final String academicBackground;
+
   bool get hasEnoughInformation =>
-      degree.isNotEmpty || cgpa != null || skills.isNotEmpty || academicBackground.isNotEmpty;
+      degree.isNotEmpty ||
+      cgpa != null ||
+      skills.isNotEmpty ||
+      academicBackground.isNotEmpty;
 
   static String _text(dynamic value) => value?.toString().trim() ?? '';
 
@@ -53,6 +57,8 @@ class UserProfile {
       return value.map(_text).where((item) => item.isNotEmpty).toList();
     }
     final text = _text(value);
-    return text.isEmpty ? <String>[] : text.split(',').map((e) => e.trim()).toList();
+    return text.isEmpty
+        ? <String>[]
+        : text.split(',').map((e) => e.trim()).toList();
   }
 }

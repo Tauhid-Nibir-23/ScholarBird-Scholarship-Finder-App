@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 
 import '../screens/profile/profile_widgets.dart';
 import 'saved_scholarship_controls.dart';
-import 'scholarship_ui.dart';
 
 class SavedScholarshipCard extends StatelessWidget {
   const SavedScholarshipCard({
@@ -39,7 +38,9 @@ class SavedScholarshipCard extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: isSelected ? sbPrimary : sbBorder, width: isSelected ? 1.4 : 1),
+            border: Border.all(
+                color: isSelected ? sbPrimary : sbBorder,
+                width: isSelected ? 1.4 : 1),
           ),
           clipBehavior: Clip.hardEdge,
           child: Row(
@@ -54,14 +55,16 @@ class SavedScholarshipCard extends StatelessWidget {
                     child: imageUrl.isEmpty
                         ? Container(
                             color: sbPrimary.withValues(alpha: 0.08),
-                            child: const Icon(Icons.school_outlined, color: sbPrimary),
+                            child: const Icon(Icons.school_outlined,
+                                color: sbPrimary),
                           )
                         : Image.network(
                             imageUrl,
                             fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) => Container(
                               color: sbPrimary.withValues(alpha: 0.08),
-                              child: const Icon(Icons.school_outlined, color: sbPrimary),
+                              child: const Icon(Icons.school_outlined,
+                                  color: sbPrimary),
                             ),
                           ),
                   ),
@@ -69,7 +72,8 @@ class SavedScholarshipCard extends StatelessWidget {
               ),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.only(top: 12, right: 12, bottom: 12),
+                  padding:
+                      const EdgeInsets.only(top: 12, right: 12, bottom: 12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -89,19 +93,25 @@ class SavedScholarshipCard extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          SavedScholarshipIconButton(scholarship: data, iconSize: 20),
+                          SavedScholarshipIconButton(
+                              scholarship: data, iconSize: 20),
                         ],
                       ),
                       const SizedBox(height: 8),
-                      Text(country.isEmpty ? 'Global' : country, style: const TextStyle(fontSize: 12, color: sbSecondaryText)),
+                      Text(country.isEmpty ? 'Global' : country,
+                          style: const TextStyle(
+                              fontSize: 12, color: sbSecondaryText)),
                       const SizedBox(height: 4),
-                      Text(degree.isEmpty ? 'Degree not available' : degree, style: const TextStyle(fontSize: 12, color: sbSecondaryText)),
+                      Text(degree.isEmpty ? 'Degree not available' : degree,
+                          style: const TextStyle(
+                              fontSize: 12, color: sbSecondaryText)),
                       const SizedBox(height: 6),
                       Text(
                         savedAt is Timestamp
                             ? 'Saved ${savedAt.toDate().day}/${savedAt.toDate().month}/${savedAt.toDate().year}'
                             : 'Saved locally',
-                        style: const TextStyle(fontSize: 12, color: sbSecondaryText),
+                        style: const TextStyle(
+                            fontSize: 12, color: sbSecondaryText),
                       ),
                       const SizedBox(height: 8),
                       Align(

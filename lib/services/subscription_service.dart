@@ -98,7 +98,8 @@ class SubscriptionService {
   }) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      throw const PaymentException('User must be logged in to upgrade subscription.');
+      throw const PaymentException(
+          'User must be logged in to upgrade subscription.');
     }
 
     final body = {
@@ -126,7 +127,8 @@ class SubscriptionService {
 
   Future<PaymentValidationResult> validatePayment(String transactionId) async {
     if (transactionId.trim().isEmpty) {
-      throw const PaymentException('Transaction ID is required for validation.');
+      throw const PaymentException(
+          'Transaction ID is required for validation.');
     }
 
     final body = {
@@ -175,7 +177,7 @@ class SubscriptionService {
           isDuplicate: true,
         );
       } else {
-        String message = 'Payment server error (${response.statusCode}).';
+        var message = 'Payment server error (${response.statusCode}).';
         try {
           final errMap = jsonDecode(responseBody);
           if (errMap is Map && errMap.containsKey('detail')) {
