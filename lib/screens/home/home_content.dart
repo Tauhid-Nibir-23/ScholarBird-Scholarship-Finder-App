@@ -632,7 +632,7 @@ class _HomeContentState extends State<HomeContent> {
                 ),
                 const SizedBox(height: 10),
                 Align(
-                  alignment: Alignment.centerLeft,
+                  alignment: Alignment.center,
                   child: Material(
                     color: buttonColor,
                     borderRadius: BorderRadius.circular(10),

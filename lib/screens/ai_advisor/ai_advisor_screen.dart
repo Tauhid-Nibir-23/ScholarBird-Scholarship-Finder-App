@@ -10,7 +10,8 @@ import '../scholarship/scholarship_details.dart';
 import '../../widgets/saved_scholarship_controls.dart';
 
 class AIAdvisorScreen extends StatefulWidget {
-  const AIAdvisorScreen({super.key});
+  const AIAdvisorScreen({super.key, this.onMenuTap});
+  final VoidCallback? onMenuTap;
 
   @override
   State<AIAdvisorScreen> createState() => _AIAdvisorScreenState();
@@ -75,7 +76,9 @@ class _AIAdvisorScreenState extends State<AIAdvisorScreen> {
         final profile = UserProfile.fromFirestore(snapshot.data!);
         return Scaffold(
           backgroundColor: const Color(0xFFF5F7FB),
-          appBar: AppBar(backgroundColor: Colors.white, elevation: 0, centerTitle: true,
+          appBar: AppBar(backgroundColor: Colors.white, elevation: 0, toolbarHeight: 72,
+              shape: const Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
+              leading: IconButton(tooltip: 'Open navigation menu', onPressed: widget.onMenuTap, icon: const Icon(Icons.menu_rounded)), centerTitle: true,
               title: const Text('ScholarBird AI', style: TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF1A1A2E)))),
           body: SafeArea(
             child: ListView(

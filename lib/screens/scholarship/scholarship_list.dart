@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:ScholarBird/screens/scholarship/scholarship_details.dart';
 import 'package:ScholarBird/widgets/scholarship_ui.dart';
 import '../../widgets/saved_scholarship_controls.dart';
 
 class ScholarshipsScreen extends StatefulWidget {
-  const ScholarshipsScreen({super.key});
+  const ScholarshipsScreen({super.key, this.onMenuTap});
+
+  final VoidCallback? onMenuTap;
 
   @override
   State<ScholarshipsScreen> createState() => _ScholarshipsScreenState();
@@ -14,14 +15,32 @@ class ScholarshipsScreen extends StatefulWidget {
 
 class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
   final TextEditingController _searchController = TextEditingController();
+  List<QueryDocumentSnapshot<Map<String, dynamic>>>? _cachedDocuments;
+  List<Map<String, dynamic>> _cachedScholarships = const [];
+  List<QueryDocumentSnapshot<Map<String, dynamic>>>? _cachedOptionDocuments;
+  final Map<String, List<String>> _optionCache = {};
 
   String _selectedField = '';
   String _selectedDegree = '';
   String _selectedCountry = '';
+  String _selectedFunding = '';
+  String _selectedDeadline = '';
+  int? _selectedDeadlineMonth;
+  String _selectedIelts = '';
+  String _selectedEnglishMedium = '';
+  String _selectedResearch = '';
+  double? _maximumMinCgpa;
+  int? _maximumBacklogs;
   String _searchQuery = '';
-  String _selectedSort = 'Deadline (Soonest)';
+  String _selectedSort = 'Most Relevant';
 
-  final List<String> sortOptions = ['Deadline (Soonest)', 'Deadline (Latest)'];
+  static const List<String> sortOptions = [
+    'Most Relevant',
+    'Newest',
+    'Deadline Soon',
+    'Fully Funded First',
+    'Alphabetical',
+  ];
 
   @override
   void initState() {
@@ -40,10 +59,16 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
   }
 
   List<String> _collectOptions(
-      List<QueryDocumentSnapshot<Object?>> docs, String key) {
+      List<QueryDocumentSnapshot<Map<String, dynamic>>> docs, String key) {
+    if (!identical(_cachedOptionDocuments, docs)) {
+      _cachedOptionDocuments = docs;
+      _optionCache.clear();
+    }
+    final cached = _optionCache[key];
+    if (cached != null) return cached;
     final values = <String>{};
     for (final doc in docs) {
-      final data = doc.data()! as Map<String, dynamic>;
+      final data = doc.data();
       final raw = data[key];
       if (raw == null) continue;
       final value = raw.toString().trim();
@@ -53,7 +78,7 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
     }
     final list = values.toList();
     list.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
-    return list;
+    return _optionCache[key] = list;
   }
 
   List<String> _withSelected(List<String> options, String selected) {
@@ -83,7 +108,7 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
   }
 
   List<String> _collectDegreeOptions(
-      List<QueryDocumentSnapshot<Object?>> docs) {
+      List<QueryDocumentSnapshot<Map<String, dynamic>>> docs) {
     final raw = _collectOptions(docs, 'degree');
     final mapped = raw.map(_formatDegree).toSet().toList();
     mapped.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
@@ -92,14 +117,16 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
 
   bool _matchesFilters(Map<String, dynamic> scholarship) {
     if (_searchQuery.isNotEmpty) {
-      final title = scholarship['title'].toString().toLowerCase();
-      final field = scholarship['field'].toString().toLowerCase();
-      final country = scholarship['country'].toString().toLowerCase();
-      final degree = _normalizeDegree(scholarship['degree'].toString());
-      if (!title.contains(_searchQuery) &&
-          !field.contains(_searchQuery) &&
-          !country.contains(_searchQuery) &&
-          !degree.contains(_normalizeDegree(_searchQuery))) {
+      // The upload pipeline supplies search_tokens. Fall back to the existing
+      // document fields so older Firestore records remain searchable too.
+      final searchableValues = [
+        scholarship['title'], scholarship['university'], scholarship['country'],
+        scholarship['field'], scholarship['provider'], scholarship['description'],
+        scholarship['keywords'], scholarship['tags'], scholarship['search_tokens'],
+      ];
+      final haystack = searchableValues.whereType<Object?>().expand((value) => value is Iterable
+          ? value.map((item) => item.toString()) : [value.toString()]).join(' ').toLowerCase();
+      if (!_searchQuery.split(RegExp(r'\s+')).every(haystack.contains)) {
         return false;
       }
     }
@@ -125,7 +152,67 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
       }
     }
 
+    if (!_matchesText(scholarship, 'funding', _selectedFunding,
+        fallbacks: const ['fundingType', 'amount'])) return false;
+    if (!_matchesBoolean(scholarship, 'ieltsRequired', _selectedIelts)) return false;
+    if (!_matchesBoolean(scholarship, 'englishMediumAccepted', _selectedEnglishMedium)) return false;
+    if (!_matchesBoolean(scholarship, 'researchRequired', _selectedResearch)) return false;
+    if (_maximumMinCgpa != null && _number(scholarship['minCGPA'] ?? scholarship['minCgpa']) > _maximumMinCgpa!) return false;
+    if (_maximumBacklogs != null && _number(scholarship['maxBacklogs']).round() > _maximumBacklogs!) return false;
+    if (_selectedDeadline.isNotEmpty && !_matchesDeadline(scholarship)) return false;
+    if (_selectedDeadlineMonth != null &&
+        _parseDeadline(scholarship['deadline']?.toString() ?? '')?.month !=
+            _selectedDeadlineMonth) {
+      return false;
+    }
+
     return true;
+  }
+
+  bool _matchesText(Map<String, dynamic> value, String key, String selected,
+      {List<String> fallbacks = const []}) {
+    if (selected.isEmpty) return true;
+    final candidates = [key, ...fallbacks].map((field) => value[field]?.toString().toLowerCase() ?? '');
+    return candidates.any((candidate) => candidate == selected.toLowerCase());
+  }
+
+  bool _matchesBoolean(Map<String, dynamic> value, String key, String selected) {
+    if (selected.isEmpty) return true;
+    return value[key] == (selected == 'Required' || selected == 'Accepted');
+  }
+
+  double _number(dynamic value) => value is num ? value.toDouble() : double.tryParse(value?.toString() ?? '') ?? 0;
+
+  bool _matchesDeadline(Map<String, dynamic> scholarship) {
+    final deadline = _parseDeadline(scholarship['deadline']?.toString() ?? '');
+    if (_selectedDeadline == 'Open') return deadline == null || !deadline.isBefore(DateTime.now());
+    if (deadline == null) return false;
+    final days = deadline.difference(DateTime.now()).inDays;
+    return _selectedDeadline == 'Next 30 days' ? days >= 0 && days <= 30 : days >= 0 && days <= 90;
+  }
+
+  void _resetFilters() {
+    _searchController.clear();
+    setState(() {
+      _selectedField = _selectedDegree = _selectedCountry = _selectedFunding = '';
+      _selectedDeadline = '';
+      _selectedDeadlineMonth = null;
+      _selectedIelts = _selectedEnglishMedium = _selectedResearch = '';
+      _maximumMinCgpa = null;
+      _maximumBacklogs = null;
+      _selectedSort = 'Most Relevant';
+    });
+  }
+
+  List<Map<String, dynamic>> _scholarshipsFor(
+      List<QueryDocumentSnapshot<Map<String, dynamic>>> documents) {
+    // A filter/sort state change should not repeatedly deserialize a 10k item
+    // Firestore snapshot. The cache is invalidated only by a new snapshot.
+    if (!identical(_cachedDocuments, documents)) {
+      _cachedDocuments = documents;
+      _cachedScholarships = documents.map(_buildScholarshipData).toList(growable: false);
+    }
+    return _cachedScholarships;
   }
 
   String _getStatusBadge(Map<String, dynamic> s) {
@@ -217,36 +304,31 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
           child: Column(
             children: [
               Container(
-                color: Colors.white,
+                height: 72,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
+                ),
+                child: Stack(
+                  alignment: Alignment.center,
                   children: [
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: IconButton(
+                        tooltip: 'Open navigation menu',
+                        onPressed: widget.onMenuTap,
+                        icon: const Icon(Icons.menu_rounded),
+                      ),
+                    ),
                     const Text(
                       'ScholarBird',
                       style: TextStyle(
-                        fontSize: 24,
+                        fontSize: 20,
                         fontWeight: FontWeight.w800,
                         color: Color(0xFF1A1A2E),
                         letterSpacing: -0.5,
-                      ),
-                    ),
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [Color(0xFF5B7AE8), Color(0xFF3D5AC1)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.person,
-                        color: Colors.white,
-                        size: 20,
                       ),
                     ),
                   ],
@@ -255,51 +337,59 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
               Padding(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF5B7AE8).withValues(alpha: 0.1),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      )
-                    ],
-                  ),
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: 'Search scholarships, majors...',
-                      hintStyle: TextStyle(
-                        color: Colors.grey[400],
-                        fontSize: 15,
-                      ),
-                      prefixIcon: Icon(
-                        Icons.search,
-                        color: Colors.grey[400],
-                      ),
-                      suffixIcon: _searchController.text.isNotEmpty
-                          ? GestureDetector(
-                              onTap: _searchController.clear,
-                              child: Icon(
-                                Icons.close,
-                                color: Colors.grey[400],
-                              ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF5B7AE8)
+                                  .withValues(alpha: 0.1),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
                             )
-                          : null,
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide.none,
+                          ],
+                        ),
+                        child: TextField(
+                          controller: _searchController,
+                          decoration: InputDecoration(
+                            hintText: 'Search scholarships, majors...',
+                            hintStyle: TextStyle(
+                              color: Colors.grey[400],
+                              fontSize: 15,
+                            ),
+                            prefixIcon: Icon(
+                              Icons.search,
+                              color: Colors.grey[400],
+                            ),
+                            suffixIcon: _searchController.text.isNotEmpty
+                                ? GestureDetector(
+                                    onTap: _searchController.clear,
+                                    child: Icon(Icons.close,
+                                        color: Colors.grey[400]),
+                                  )
+                                : null,
+                            filled: true,
+                            fillColor: Colors.white,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide.none,
+                            ),
+                            contentPadding:
+                                const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                        ),
                       ),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                  ),
+                    const SizedBox(width: 10),
+                    _buildMoreFiltersButton(),
+                  ],
                 ),
               ),
               Expanded(
-                child: StreamBuilder<QuerySnapshot>(
+                child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                   stream: FirebaseFirestore.instance
                       .collection('scholarships')
                       .snapshots(),
@@ -316,6 +406,14 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
                     final countryOptions = _withSelected(
                       _collectOptions(allData, 'country'),
                       _selectedCountry,
+                    );
+                    final fundingOptions = _withSelected(
+                      {
+                        ..._collectOptions(allData, 'funding'),
+                        ..._collectOptions(allData, 'fundingType'),
+                        ..._collectOptions(allData, 'amount'),
+                      }.toList()..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase())),
+                      _selectedFunding,
                     );
 
                     Widget listContent;
@@ -336,15 +434,13 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
                           description:
                               'New opportunities will appear here as they are published.');
                     } else {
-                      final filteredData = allData
-                          .map(_buildScholarshipData)
+                      final filteredData = _scholarshipsFor(allData)
                           .where(_matchesFilters)
-                          .toList();
+                          .toList(growable: false);
 
                       final sortedData =
                           List<Map<String, dynamic>>.from(filteredData);
-                      if (_selectedSort == 'Deadline (Soonest)' ||
-                          _selectedSort == 'Deadline (Latest)') {
+                      if (_selectedSort == 'Deadline Soon') {
                         sortedData.sort((a, b) {
                           final aDate =
                               _parseDeadline(a['deadline'].toString());
@@ -353,10 +449,15 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
                           if (aDate == null && bDate == null) return 0;
                           if (aDate == null) return 1;
                           if (bDate == null) return -1;
-                          return _selectedSort == 'Deadline (Soonest)'
-                              ? aDate.compareTo(bDate)
-                              : bDate.compareTo(aDate);
+                          return aDate.compareTo(bDate);
                         });
+                      } else if (_selectedSort == 'Alphabetical') {
+                        sortedData.sort((a, b) => a['title'].toString().toLowerCase().compareTo(b['title'].toString().toLowerCase()));
+                      } else if (_selectedSort == 'Fully Funded First') {
+                        sortedData.sort((a, b) =>
+                            _fundingRank(b).compareTo(_fundingRank(a)));
+                      } else if (_selectedSort == 'Newest') {
+                        sortedData.sort((a, b) => _newestValue(b).compareTo(_newestValue(a)));
                       }
 
                       if (sortedData.isEmpty) {
@@ -365,14 +466,7 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
                             title: 'No matches found',
                             description:
                                 'Try a different keyword or clear one of your filters.',
-                            onRetry: () {
-                              _searchController.clear();
-                              setState(() {
-                                _selectedField = '';
-                                _selectedDegree = '';
-                                _selectedCountry = '';
-                              });
-                            });
+                            onRetry: _resetFilters);
                       } else {
                         listContent = ListView.builder(
                           padding: const EdgeInsets.symmetric(
@@ -395,36 +489,32 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
                             child: Row(
                               children: [
                                 _buildFilterButton(
-                                  'Field',
-                                  _selectedField,
-                                  fieldOptions,
-                                  (value) =>
-                                      setState(() => _selectedField = value),
-                                ),
-                                const SizedBox(width: 10),
-                                _buildFilterButton(
-                                  'Degree',
-                                  _selectedDegree,
-                                  degreeOptions,
-                                  (value) =>
-                                      setState(() => _selectedDegree = value),
-                                ),
-                                const SizedBox(width: 10),
-                                _buildFilterButton(
-                                  'Country',
-                                  _selectedCountry,
-                                  countryOptions,
+                                  'Country', _selectedCountry, countryOptions,
                                   (value) =>
                                       setState(() => _selectedCountry = value),
                                 ),
                                 const SizedBox(width: 10),
                                 _buildFilterButton(
-                                  'Sort',
-                                  _selectedSort,
-                                  sortOptions,
+                                  'Degree', _selectedDegree, degreeOptions,
                                   (value) =>
-                                      setState(() => _selectedSort = value),
+                                      setState(() => _selectedDegree = value),
                                 ),
+                                const SizedBox(width: 10),
+                                _buildFilterButton(
+                                  'Funding', _selectedFunding, fundingOptions,
+                                  (value) =>
+                                      setState(() => _selectedFunding = value),
+                                ),
+                                const SizedBox(width: 10),
+                                _buildFilterButton('Deadline', _selectedDeadline,
+                                    const ['Next 30 days', 'Next 90 days', 'Open'],
+                                    (value) => setState(() => _selectedDeadline = value)),
+                                const SizedBox(width: 10),
+                                _buildFilterButton('Field', _selectedField, fieldOptions,
+                                    (value) => setState(() => _selectedField = value)),
+                                const SizedBox(width: 10),
+                                _buildFilterButton('Sort', _selectedSort, sortOptions,
+                                    (value) => setState(() => _selectedSort = value)),
                               ],
                             ),
                           ),
@@ -441,6 +531,96 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
         ),
       );
 
+  bool _isFullyFunded(Map<String, dynamic> s) =>
+      '${s['funding'] ?? s['fundingType'] ?? s['amount'] ?? ''}'.toLowerCase().contains('full');
+
+  int _fundingRank(Map<String, dynamic> scholarship) =>
+      _isFullyFunded(scholarship) ? 1 : 0;
+
+  DateTime _newestValue(Map<String, dynamic> s) {
+    final raw = s['createdAt'] ?? s['updatedAt'] ?? s['publishedAt'];
+    if (raw is Timestamp) return raw.toDate();
+    return DateTime.tryParse(raw?.toString() ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
+  }
+
+  Widget _buildMoreFiltersButton() =>
+      ActionChip(
+        avatar: const Icon(Icons.tune, size: 18),
+        label: Text(_advancedFilterCount == 0 ? 'Filters' : 'Filters ($_advancedFilterCount)'),
+        onPressed: () => _showAdvancedFilters(_cachedDocuments ?? const []),
+        shape: StadiumBorder(side: BorderSide(color: Colors.grey.shade300)),
+        backgroundColor: _advancedFilterCount == 0 ? Colors.white : const Color(0xFFE8EDFF),
+      );
+
+  int get _advancedFilterCount => [
+        _selectedIelts, _selectedEnglishMedium, _selectedResearch,
+      ].where((value) => value.isNotEmpty).length +
+      (_maximumMinCgpa == null ? 0 : 1) +
+      (_maximumBacklogs == null ? 0 : 1) +
+      (_selectedDeadlineMonth == null ? 0 : 1);
+
+  Future<void> _showAdvancedFilters(
+      List<QueryDocumentSnapshot<Map<String, dynamic>>> docs) async {
+    String selectedIelts = _selectedIelts;
+    String selectedEnglish = _selectedEnglishMedium, selectedResearch = _selectedResearch;
+    double? cgpa = _maximumMinCgpa;
+    int? backlogs = _maximumBacklogs;
+    int? deadlineMonth = _selectedDeadlineMonth;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, setSheetState) => SafeArea(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(20, 0, 20, MediaQuery.viewInsetsOf(context).bottom + 20),
+            child: SizedBox(
+              height: MediaQuery.sizeOf(context).height * .78,
+              child: Column(children: [
+                Row(children: [
+                  const Expanded(child: Text('More filters', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700))),
+                  TextButton(onPressed: () => setSheetState(() { selectedIelts = selectedEnglish = selectedResearch = ''; cgpa = null; backlogs = null; deadlineMonth = null; }), child: const Text('Reset')),
+                ]),
+                Expanded(child: ListView(children: [
+                  _sheetSelect('IELTS Required', selectedIelts, const ['Required', 'Not Required'], (v) => setSheetState(() => selectedIelts = v)),
+                  _sheetSelect('English Medium Accepted', selectedEnglish, const ['Accepted', 'Not Accepted'], (v) => setSheetState(() => selectedEnglish = v)),
+                  _sheetSelect('Research Required', selectedResearch, const ['Required', 'Not Required'], (v) => setSheetState(() => selectedResearch = v)),
+                  _sheetSelect('Deadline Month', deadlineMonth == null ? '' : _monthName(deadlineMonth!), _monthNames, (v) => setSheetState(() => deadlineMonth = v.isEmpty ? null : _monthNames.indexOf(v) + 1)),
+                  _sheetSelect('Minimum CGPA', cgpa?.toString() ?? '', const ['2.0', '2.5', '3.0', '3.5'], (v) => setSheetState(() => cgpa = v.isEmpty ? null : double.parse(v))),
+                  _sheetSelect('Maximum Backlogs', backlogs?.toString() ?? '', const ['0', '1', '2', '3', '5'], (v) => setSheetState(() => backlogs = v.isEmpty ? null : int.parse(v))),
+                ])),
+                SizedBox(width: double.infinity, child: FilledButton(
+                  onPressed: () { setState(() { _selectedIelts = selectedIelts; _selectedEnglishMedium = selectedEnglish; _selectedResearch = selectedResearch; _maximumMinCgpa = cgpa; _maximumBacklogs = backlogs; _selectedDeadlineMonth = deadlineMonth; }); Navigator.pop(sheetContext); },
+                  child: const Text('Show results'),
+                )),
+              ]),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _sheetSelect(String label, String selected, List<String> values, ValueChanged<String> onChanged) =>
+      Padding(
+        padding: const EdgeInsets.only(bottom: 14),
+        child: DropdownButtonFormField<String>(
+          value: selected.isEmpty ? null : selected,
+          isExpanded: true,
+          decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
+          items: [const DropdownMenuItem(value: '', child: Text('Any')), ...values.map((value) => DropdownMenuItem(value: value, child: Text(value, overflow: TextOverflow.ellipsis)))],
+          onChanged: (value) => onChanged(value ?? ''),
+        ),
+      );
+
+  static const List<String> _monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
+  ];
+
+  String _monthName(int month) => _monthNames[month - 1];
+
   Widget _buildFilterButton(
     String label,
     String selectedValue,
@@ -448,6 +628,10 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
     ValueChanged<String> onSelect,
   ) =>
       PopupMenuButton<String>(
+        constraints: BoxConstraints(
+          maxWidth: 280,
+          maxHeight: MediaQuery.sizeOf(context).height * 0.65,
+        ),
         onSelected: (value) {
           if (value == 'Clear') {
             onSelect('');
@@ -479,7 +663,13 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
                   else
                     const SizedBox(width: 18),
                   const SizedBox(width: 8),
-                  Text(option),
+                  Expanded(
+                    child: Text(
+                      option,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ],
               ),
             );
@@ -747,9 +937,10 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
   }
 
   Map<String, dynamic> _buildScholarshipData(
-      QueryDocumentSnapshot<Object?> doc) {
-    final s = doc.data()! as Map<String, dynamic>;
+      QueryDocumentSnapshot<Map<String, dynamic>> doc) {
+    final s = doc.data();
     return {
+      ...s,
       'id': doc.id,
       'title': (s['title'] ?? '').toString(),
       'country': (s['country'] ?? '').toString(),

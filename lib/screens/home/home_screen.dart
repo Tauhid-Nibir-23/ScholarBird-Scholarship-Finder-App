@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../scholarship/scholarship_list.dart';
 import '../applications/my_applications.dart';
 import '../profile/profile_screen.dart';
 import '../profile/notifications_screen.dart';
+import '../profile/saved_scholarships_screen.dart';
 import '../ai_advisor/ai_advisor_screen.dart';
+import '../premium/premium_upgrade_screen.dart';
+import '../../widgets/scholarbird_navigation_drawer.dart';
 import 'home_content.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -14,6 +18,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _currentIndex = 0;
   late PageController _pageController;
 
@@ -35,10 +40,10 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         },
       ),
-      const ScholarshipsScreen(),
-      const AIAdvisorScreen(),
-      const MyApplicationsScreen(),
-      const ProfileScreen(),
+      ScholarshipsScreen(onMenuTap: _openDrawer),
+      AIAdvisorScreen(onMenuTap: _openDrawer),
+      MyApplicationsScreen(onMenuTap: _openDrawer),
+      ProfileScreen(onMenuTap: _openDrawer),
     ];
   }
 
@@ -50,7 +55,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
+      key: _scaffoldKey,
       backgroundColor: const Color(0xFFF5F7FB),
+      drawer: ScholarBirdNavigationDrawer(
+        selectedIndex: _currentIndex,
+        onTabSelected: _goToTab,
+        onSaved: () => _push(const SavedScholarshipsScreen()),
+        onNotifications: () => _push(const NotificationsScreen()),
+        onPremium: () => _push(const PremiumUpgradeScreen()),
+        onLogout: _logout,
+      ),
       appBar: _buildAppBar(),
       body: PageView(
         controller: _pageController,
@@ -73,14 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
-          onTap: (index) {
-            setState(() => _currentIndex = index);
-            _pageController.animateToPage(
-              index,
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-            );
-          },
+          onTap: _goToTab,
           type: BottomNavigationBarType.fixed,
           backgroundColor: Colors.white,
           selectedItemColor: const Color(0xFF5B7AE8),
@@ -124,14 +131,38 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
 
+  void _goToTab(int index) {
+    if (_currentIndex == index) return;
+    setState(() => _currentIndex = index);
+    _pageController.animateToPage(index,
+        duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+  }
+
+  void _openDrawer() => _scaffoldKey.currentState?.openDrawer();
+
+  void _push(Widget screen) =>
+      Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
+
+  Future<void> _logout() async {
+    await FirebaseAuth.instance.signOut();
+    if (mounted) Navigator.of(context).pushNamedAndRemoveUntil('/login', (_) => false);
+  }
+
   PreferredSizeWidget? _buildAppBar() {
     if (_currentIndex == 0) {
       return AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: const SizedBox.shrink(),
-        leadingWidth: 0,
-        titleSpacing: 0,
+        toolbarHeight: 72,
+        shape: const Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
+        leading: Builder(
+          builder: (context) => IconButton(
+            tooltip: 'Open navigation menu',
+            icon: const Icon(Icons.menu_rounded),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
+        titleSpacing: 16,
         centerTitle: false,
         title: Row(
           children: [
@@ -185,5 +216,3 @@ class _HomeScreenState extends State<HomeScreen> {
     return null;
   }
 }
-
-

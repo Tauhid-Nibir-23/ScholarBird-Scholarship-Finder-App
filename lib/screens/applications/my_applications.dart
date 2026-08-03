@@ -5,7 +5,8 @@ import '../profile/profile_widgets.dart';
 import '../scholarship/scholarship_details.dart';
 
 class MyApplicationsScreen extends StatelessWidget {
-  const MyApplicationsScreen({super.key});
+  const MyApplicationsScreen({super.key, this.onMenuTap});
+  final VoidCallback? onMenuTap;
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +17,13 @@ class MyApplicationsScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: const SizedBox.shrink(),
+        toolbarHeight: 72,
+        shape: const Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
+        leading: IconButton(
+          tooltip: 'Open navigation menu',
+          onPressed: onMenuTap,
+          icon: const Icon(Icons.menu_rounded),
+        ),
         centerTitle: true,
         title: const Text(
           'My Applications',
