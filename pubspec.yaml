@@ -20,6 +20,12 @@ dependencies:
   url_launcher: ^6.3.0
   google_generative_ai: ^0.4.7
   flutter_dotenv: ^6.0.1
+  pdf: ^3.11.3
+  printing: ^5.14.2
+  path_provider: ^2.1.5
+  permission_handler: ^12.0.1
+  cached_network_image: ^3.4.1
+  webview_flutter: ^4.10.0
 
 dev_dependencies:
   flutter_test:
@@ -37,4 +43,5 @@ flutter:
 
   assets:
     - assets/images/
+    - assets/pdfs/
     - .env

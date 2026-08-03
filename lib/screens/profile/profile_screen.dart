@@ -7,6 +7,10 @@ import 'scholarship_preferences_screen.dart';
 import 'saved_scholarships_screen.dart';
 import 'notifications_screen.dart';
 import 'profile_widgets.dart';
+import '../premium/manage_subscription_screen.dart';
+import '../premium/premium_upgrade_screen.dart';
+import '../../models/subscription_model.dart';
+import '../../services/pdf_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -211,6 +215,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         const SizedBox(height: 20),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: _membershipCard(data),
+                        ),
+                        const SizedBox(height: 20),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -267,6 +276,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                               const SizedBox(height: 12),
                               ProfileMenuTile(
+                                icon: Icons.picture_as_pdf_outlined,
+                                title: 'Download User Guide',
+                                subtitle: 'Learn how to use ScholarBird',
+                                onTap: () async {
+                                  try {
+                                    await PdfService.downloadUserGuide();
+                                    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('ScholarBird User Guide downloaded successfully.')));
+                                  } catch (_) {
+                                    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Unable to generate the User Guide. Please try again.')));
+                                  }
+                                },
+                              ),
+                              const SizedBox(height: 12),
+                              ProfileMenuTile(
                                 icon: Icons.logout,
                                 title: 'Logout',
                                 isDestructive: true,
@@ -303,6 +326,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     return (completed / fields.length) * 100;
+  }
+
+  Widget _membershipCard(Map<String, dynamic> data) {
+    final membership = SubscriptionModel.fromMap(data);
+    final premium = membership.isPremium;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF101A38), Color(0xFF24439A)],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [BoxShadow(color: sbPrimary.withValues(alpha: .18), blurRadius: 16, offset: const Offset(0, 6))],
+      ),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Container(width: 46, height: 46, padding: const EdgeInsets.all(5), decoration: BoxDecoration(color: Colors.white.withValues(alpha: .14), borderRadius: BorderRadius.circular(14)), child: ClipRRect(borderRadius: BorderRadius.circular(10), child: Image.asset('assets/images/Logo_ScholarBird.png', fit: BoxFit.cover))),
+        const SizedBox(width: 14),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Expanded(child: Text(premium ? 'ScholarBird PRO' : 'ScholarBird Free', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.white))),
+            InkWell(onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => premium ? const ManageSubscriptionScreen() : const PremiumUpgradeScreen())), child: Text(premium ? 'View Details' : 'Upgrade Now', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700, decoration: TextDecoration.underline))),
+          ]),
+          const SizedBox(height: 4),
+          Text(premium ? 'Premium active - ${membership.daysRemaining} days remaining' : 'Free plan - browse and save scholarships.', style: const TextStyle(fontSize: 12, color: Color(0xFFE2E8F0))),
+        ])),
+      ]),
+    );
   }
 
   Widget _buildTag(

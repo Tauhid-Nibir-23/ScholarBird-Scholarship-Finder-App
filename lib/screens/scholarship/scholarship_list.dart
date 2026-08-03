@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:ScholarBird/screens/scholarship/scholarship_details.dart';
+import 'package:ScholarBird/widgets/scholarship_ui.dart';
+import '../../widgets/saved_scholarship_controls.dart';
 
 class ScholarshipsScreen extends StatefulWidget {
   const ScholarshipsScreen({super.key});
@@ -12,7 +14,6 @@ class ScholarshipsScreen extends StatefulWidget {
 
 class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
   final TextEditingController _searchController = TextEditingController();
-  Set<String> _savedScholarshipIds = <String>{};
 
   String _selectedField = '';
   String _selectedDegree = '';
@@ -30,7 +31,6 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
         _searchQuery = _searchController.text.toLowerCase();
       });
     });
-    _loadSavedScholarships();
   }
 
   @override
@@ -39,85 +39,8 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
     super.dispose();
   }
 
-  Future<void> _loadSavedScholarships() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-
-    final snapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .collection('savedScholarships')
-        .get();
-
-    if (!mounted) return;
-
-    setState(() {
-      _savedScholarshipIds = snapshot.docs.map((doc) => doc.id).toSet();
-    });
-  }
-
-  Future<void> _toggleSave(Map<String, dynamic> s) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please login first')),
-      );
-      return;
-    }
-
-    final scholarshipId = (s['id'] ?? '').toString();
-    if (scholarshipId.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Missing scholarship id')),
-      );
-      return;
-    }
-
-    final docRef = FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .collection('savedScholarships')
-        .doc(scholarshipId);
-
-    final wasSaved = _savedScholarshipIds.contains(scholarshipId);
-
-    setState(() {
-      if (wasSaved) {
-        _savedScholarshipIds.remove(scholarshipId);
-      } else {
-        _savedScholarshipIds.add(scholarshipId);
-      }
-    });
-
-    try {
-      if (wasSaved) {
-        await docRef.delete();
-      } else {
-        await docRef.set({
-          'title': s['title'],
-          'country': s['country'],
-          'degree': s['degree'],
-          'image': s['image'],
-          'savedAt': Timestamp.now(),
-        });
-      }
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        if (wasSaved) {
-          _savedScholarshipIds.add(scholarshipId);
-        } else {
-          _savedScholarshipIds.remove(scholarshipId);
-        }
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not update saved status')),
-      );
-    }
-  }
-
-  List<String> _collectOptions(List<QueryDocumentSnapshot<Object?>> docs, String key) {
+  List<String> _collectOptions(
+      List<QueryDocumentSnapshot<Object?>> docs, String key) {
     final values = <String>{};
     for (final doc in docs) {
       final data = doc.data()! as Map<String, dynamic>;
@@ -151,13 +74,16 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
 
   String _normalizeDegree(String value) {
     final cleaned = value.trim().toLowerCase();
-    if (cleaned == "master's" || cleaned == 'masters' || cleaned == 'postgraduate') {
+    if (cleaned == "master's" ||
+        cleaned == 'masters' ||
+        cleaned == 'postgraduate') {
       return 'postgraduate';
     }
     return cleaned;
   }
 
-  List<String> _collectDegreeOptions(List<QueryDocumentSnapshot<Object?>> docs) {
+  List<String> _collectDegreeOptions(
+      List<QueryDocumentSnapshot<Object?>> docs) {
     final raw = _collectOptions(docs, 'degree');
     final mapped = raw.map(_formatDegree).toSet().toList();
     mapped.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
@@ -292,7 +218,8 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
             children: [
               Container(
                 color: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -326,7 +253,8 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
@@ -392,52 +320,36 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
 
                     Widget listContent;
                     if (snapshot.hasError) {
-                      listContent = Center(
-                        child: Text(
-                          'Error: ${snapshot.error}',
-                          style: const TextStyle(color: Colors.red),
-                        ),
-                      );
-                    } else if (snapshot.connectionState == ConnectionState.waiting &&
+                      listContent = ScholarshipState(
+                          icon: Icons.cloud_off_outlined,
+                          title: 'Unable to load scholarships',
+                          description: 'Check your connection and try again.',
+                          onRetry: () => setState(() {}));
+                    } else if (snapshot.connectionState ==
+                            ConnectionState.waiting &&
                         allData.isEmpty) {
-                      listContent = const Center(
-                        child: CircularProgressIndicator(
-                          color: Color(0xFF5B7AE8),
-                        ),
-                      );
+                      listContent = const ScholarshipSkeletonList();
                     } else if (allData.isEmpty) {
-                      listContent = Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.search_off,
-                              size: 64,
-                              color: Colors.grey[300],
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'No scholarships found',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
+                      listContent = const ScholarshipState(
+                          icon: Icons.school_outlined,
+                          title: 'No scholarships yet',
+                          description:
+                              'New opportunities will appear here as they are published.');
                     } else {
                       final filteredData = allData
                           .map(_buildScholarshipData)
                           .where(_matchesFilters)
                           .toList();
 
-                      final sortedData = List<Map<String, dynamic>>.from(filteredData);
+                      final sortedData =
+                          List<Map<String, dynamic>>.from(filteredData);
                       if (_selectedSort == 'Deadline (Soonest)' ||
                           _selectedSort == 'Deadline (Latest)') {
                         sortedData.sort((a, b) {
-                          final aDate = _parseDeadline(a['deadline'].toString());
-                          final bDate = _parseDeadline(b['deadline'].toString());
+                          final aDate =
+                              _parseDeadline(a['deadline'].toString());
+                          final bDate =
+                              _parseDeadline(b['deadline'].toString());
                           if (aDate == null && bDate == null) return 0;
                           if (aDate == null) return 1;
                           if (bDate == null) return -1;
@@ -448,34 +360,28 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
                       }
 
                       if (sortedData.isEmpty) {
-                        listContent = Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.filter_alt_off,
-                                size: 64,
-                                color: Colors.grey[300],
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'No results match your filters',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
+                        listContent = ScholarshipState(
+                            icon: Icons.search_off_outlined,
+                            title: 'No matches found',
+                            description:
+                                'Try a different keyword or clear one of your filters.',
+                            onRetry: () {
+                              _searchController.clear();
+                              setState(() {
+                                _selectedField = '';
+                                _selectedDegree = '';
+                                _selectedCountry = '';
+                              });
+                            });
                       } else {
                         listContent = ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 8),
                           itemCount: sortedData.length,
                           itemBuilder: (context, index) => Padding(
-                              padding: const EdgeInsets.only(bottom: 16),
-                              child: _buildScholarshipCard(sortedData[index]),
-                            ),
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: _buildScholarshipCard(sortedData[index]),
+                          ),
                         );
                       }
                     }
@@ -492,28 +398,32 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
                                   'Field',
                                   _selectedField,
                                   fieldOptions,
-                                  (value) => setState(() => _selectedField = value),
+                                  (value) =>
+                                      setState(() => _selectedField = value),
                                 ),
                                 const SizedBox(width: 10),
                                 _buildFilterButton(
                                   'Degree',
                                   _selectedDegree,
                                   degreeOptions,
-                                  (value) => setState(() => _selectedDegree = value),
+                                  (value) =>
+                                      setState(() => _selectedDegree = value),
                                 ),
                                 const SizedBox(width: 10),
                                 _buildFilterButton(
                                   'Country',
                                   _selectedCountry,
                                   countryOptions,
-                                  (value) => setState(() => _selectedCountry = value),
+                                  (value) =>
+                                      setState(() => _selectedCountry = value),
                                 ),
                                 const SizedBox(width: 10),
                                 _buildFilterButton(
                                   'Sort',
                                   _selectedSort,
                                   sortOptions,
-                                  (value) => setState(() => _selectedSort = value),
+                                  (value) =>
+                                      setState(() => _selectedSort = value),
                                 ),
                               ],
                             ),
@@ -536,15 +446,16 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
     String selectedValue,
     List<String> options,
     ValueChanged<String> onSelect,
-  ) => PopupMenuButton<String>(
-      onSelected: (value) {
-        if (value == 'Clear') {
-          onSelect('');
-        } else {
-          onSelect(value);
-        }
-      },
-      itemBuilder: (BuildContext context) => [
+  ) =>
+      PopupMenuButton<String>(
+        onSelected: (value) {
+          if (value == 'Clear') {
+            onSelect('');
+          } else {
+            onSelect(value);
+          }
+        },
+        itemBuilder: (BuildContext context) => [
           if (label != 'Sort') ...[
             PopupMenuItem(
               value: 'Clear',
@@ -574,321 +485,272 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
             );
           }).toList(),
         ],
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: selectedValue.isNotEmpty ? const Color(0xFF5B7AE8) : Colors.white,
-          borderRadius: BorderRadius.circular(22),
-          border: selectedValue.isEmpty
-              ? Border.all(color: Colors.grey[300]!)
-              : null,
-          boxShadow: selectedValue.isNotEmpty
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFF5B7AE8).withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  )
-                ]
-              : null,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              selectedValue.isEmpty ? label : selectedValue,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: selectedValue.isNotEmpty ? Colors.white : Colors.black87,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: selectedValue.isNotEmpty
+                ? const Color(0xFF5B7AE8)
+                : Colors.white,
+            borderRadius: BorderRadius.circular(22),
+            border: selectedValue.isEmpty
+                ? Border.all(color: Colors.grey[300]!)
+                : null,
+            boxShadow: selectedValue.isNotEmpty
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFF5B7AE8).withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    )
+                  ]
+                : null,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                selectedValue.isEmpty ? label : selectedValue,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color:
+                      selectedValue.isNotEmpty ? Colors.white : Colors.black87,
+                ),
               ),
-            ),
-            const SizedBox(width: 6),
-            Icon(
-              Icons.keyboard_arrow_down,
-              size: 18,
-              color: selectedValue.isNotEmpty ? Colors.white : Colors.grey[600],
-            ),
-          ],
+              const SizedBox(width: 6),
+              Icon(
+                Icons.keyboard_arrow_down,
+                size: 18,
+                color:
+                    selectedValue.isNotEmpty ? Colors.white : Colors.grey[600],
+              ),
+            ],
+          ),
         ),
-      ),
-    );
+      );
 
   Widget _buildScholarshipCard(Map<String, dynamic> s) {
     final status = _getStatusBadge(s);
     final statusColor = _getStatusColor(status);
     final scholarshipId = (s['id'] ?? '').toString();
-    final isSaved = _savedScholarshipIds.contains(scholarshipId);
 
-    return GestureDetector(
-      onTap: () {
-        _openScholarshipDetails(context, scholarshipId, s);
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 16,
-              offset: const Offset(0, 4),
-            )
-          ],
-        ),
-        clipBehavior: Clip.hardEdge,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(18),
-                  ),
-                  child: Image.network(
-                    (s['image'] ?? 'https://via.placeholder.com/400x200').toString(),
-                    height: 180,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      height: 180,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.grey.shade300,
-                            Colors.grey.shade200,
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                      ),
-                      child: Icon(
-                        Icons.school,
-                        size: 64,
-                        color: Colors.grey[400],
-                      ),
-                    ),
-                  ),
+    return Semantics(
+        button: true,
+        label: 'Scholarship: ${(s['title'] ?? 'Untitled').toString()}',
+        child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () => _openScholarshipDetails(context, scholarshipId, s),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
+                    )
+                  ],
                 ),
-                Positioned(
-                  top: 12,
-                  left: 12,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.95),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
+                clipBehavior: Clip.hardEdge,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Stack(
+                      children: [
+                        ClipRRect(
+                            borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(16)),
+                            child: ScholarshipImage(
+                                url: (s['image'] ?? '').toString(),
+                                height: 180,
+                                heroTag: 'scholarship-image-$scholarshipId')),
+                        Positioned(
+                          top: 12,
+                          left: 12,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.95),
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.08),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: SavedScholarshipIconButton(
+                              scholarship: {
+                                ...s,
+                                'id': scholarshipId,
+                              },
+                              iconSize: 22,
+                            ),
+                          ),
                         ),
+                        if (status.isNotEmpty)
+                          Positioned(
+                            top: 12,
+                            right: 12,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: statusColor,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Text(
+                                status,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.3,
+                                ),
+                              ),
+                            ),
+                          ),
                       ],
                     ),
-                    child: IconButton(
-                      icon: Icon(
-                        isSaved ? Icons.bookmark : Icons.bookmark_border,
-                        color: isSaved ? Colors.amber : Colors.grey,
-                      ),
-                      onPressed: () => _toggleSave(s),
-                      tooltip: isSaved ? 'Saved' : 'Save',
-                    ),
-                  ),
-                ),
-                if (status.isNotEmpty)
-                  Positioned(
-                    top: 12,
-                    right: 12,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: statusColor,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Text(
-                        status,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.3,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            Padding(
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    (s['title'] ?? 'Untitled').toString(),
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF1A1A2E),
-                      height: 1.3,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.school_outlined,
-                        size: 16,
-                        color: Colors.grey[600],
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        (s['field'] ?? 'N/A').toString(),
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey[700],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.public,
-                        size: 16,
-                        color: Colors.grey[600],
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        (s['country'] ?? 'N/A').toString(),
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey[700],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Icon(
-                        Icons.book_outlined,
-                        size: 16,
-                        color: Colors.grey[600],
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        _formatDegree((s['degree'] ?? 'N/A').toString()),
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey[700],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    height: 1,
-                    color: Colors.grey[200],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'AWARD VALUE',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.grey[500],
-                              letterSpacing: 0.3,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            (s['amount'] ?? 'N/A').toString(),
+                            (s['title'] ?? 'Untitled').toString(),
                             style: const TextStyle(
-                              fontSize: 15,
+                              fontSize: 17,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF5B7AE8),
+                              color: Color(0xFF1A1A2E),
+                              height: 1.3,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 10),
+                          Wrap(spacing: 8, runSpacing: 8, children: [
+                            if ((s['country'] ?? '').toString().isNotEmpty)
+                              InfoPill(
+                                  label: s['country'].toString(),
+                                  icon: Icons.public_outlined),
+                            if ((s['degree'] ?? '').toString().isNotEmpty)
+                              InfoPill(
+                                  label: _formatDegree(s['degree'].toString()),
+                                  icon: Icons.school_outlined,
+                                  color: const Color(0xFF6A1B9A)),
+                            if ((s['field'] ?? '').toString().isNotEmpty)
+                              InfoPill(
+                                  label: s['field'].toString(),
+                                  icon: Icons.menu_book_outlined,
+                                  color: const Color(0xFF1565C0)),
+                          ]),
+                          const SizedBox(height: 8),
+                          const SizedBox.shrink(),
+                          const SizedBox(height: 12),
+                          Container(
+                            height: 1,
+                            color: Colors.grey[200],
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'AWARD VALUE',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.grey[500],
+                                      letterSpacing: 0.3,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    (s['amount'] ?? 'N/A').toString(),
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF5B7AE8),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    'DEADLINE',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.grey[500],
+                                      letterSpacing: 0.3,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    (s['deadline'] ?? 'N/A').toString(),
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.grey[800],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                _openScholarshipDetails(
+                                    context, scholarshipId, s);
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF5B7AE8),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: const Text(
+                                'View Details',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                  letterSpacing: 0.3,
+                                ),
+                              ),
                             ),
                           ),
                         ],
                       ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            'DEADLINE',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.grey[500],
-                              letterSpacing: 0.3,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            (s['deadline'] ?? 'N/A').toString(),
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.grey[800],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        _openScholarshipDetails(context, scholarshipId, s);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF5B7AE8),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: const Text(
-                        'View Details',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                          letterSpacing: 0.3,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                    )
+                  ],
+                ),
               ),
-            )
-          ],
-        ),
-      ),
-    );
+            )));
   }
 
   Map<String, dynamic> _buildScholarshipData(
       QueryDocumentSnapshot<Object?> doc) {
     final s = doc.data()! as Map<String, dynamic>;
     return {
-      'id': doc.id,      
+      'id': doc.id,
       'title': (s['title'] ?? '').toString(),
       'country': (s['country'] ?? '').toString(),
       'degree': (s['degree'] ?? '').toString(),

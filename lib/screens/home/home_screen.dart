@@ -124,7 +124,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
 
-  PreferredSizeWidget _buildAppBar() {
+  PreferredSizeWidget? _buildAppBar() {
     if (_currentIndex == 0) {
       return AppBar(
         backgroundColor: Colors.white,
@@ -180,12 +180,10 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       );
     }
-    return AppBar(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-    );
+    // Each secondary tab owns its own app bar. Returning null removes the
+    // otherwise empty bar and keeps its heading aligned with the top.
+    return null;
   }
 }
-
 
 

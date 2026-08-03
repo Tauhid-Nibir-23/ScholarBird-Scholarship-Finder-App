@@ -6,7 +6,8 @@ import '../../models/scholarship.dart';
 import '../../models/scholarship_recommendation.dart';
 import '../../models/user_profile.dart';
 import '../../services/gemini_service.dart';
-import '../premium/premium_upgrade_screen.dart';
+import '../scholarship/scholarship_details.dart';
+import '../../widgets/saved_scholarship_controls.dart';
 
 class AIAdvisorScreen extends StatefulWidget {
   const AIAdvisorScreen({super.key});
@@ -30,9 +31,20 @@ class _AIAdvisorScreenState extends State<AIAdvisorScreen> {
       final scholarshipSnapshot = await FirebaseFirestore.instance.collection('scholarships').get();
       final scholarships = scholarshipSnapshot.docs.map(Scholarship.fromFirestore).toList();
       final results = await _geminiService.getScholarshipRecommendations(profile, scholarships);
-      final countriesByName = {for (final item in scholarships) item.title.toLowerCase(): item.country};
+      final detailsByName = {
+        for (final document in scholarshipSnapshot.docs)
+          (document.data()['title'] ?? '').toString().trim().toLowerCase():
+              <String, dynamic>{...document.data(), 'id': document.id},
+      };
       if (mounted) setState(() => _recommendations = results
-          .map((item) => item.withCountry(countriesByName[item.scholarshipName.toLowerCase()] ?? ''))
+          .map((item) {
+            final scholarship = detailsByName[item.scholarshipName.toLowerCase()];
+            return item.withScholarship(
+              country: (scholarship?['country'] ?? '').toString(),
+              scholarshipId: (scholarship?['id'] ?? '').toString(),
+              scholarshipData: scholarship,
+            );
+          })
           .toList());
     } on FirebaseException {
       if (mounted) setState(() => _error = 'Unable to fetch scholarships. Please try again.');
@@ -59,11 +71,6 @@ class _AIAdvisorScreenState extends State<AIAdvisorScreen> {
           return const Center(child: CircularProgressIndicator(color: Color(0xFF5B7AE8)));
         }
         if (snapshot.hasError) return const _AdvisorMessage(message: 'Unable to load your profile. Please try again.');
-
-        final data = snapshot.data?.data() ?? <String, dynamic>{};
-        if (!_isPremium(data)) return _PremiumAdvisorState(onUpgrade: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const PremiumUpgradeScreen()),
-        ));
 
         final profile = UserProfile.fromFirestore(snapshot.data!);
         return Scaffold(
@@ -99,12 +106,6 @@ class _AIAdvisorScreenState extends State<AIAdvisorScreen> {
     );
   }
 
-  bool _isPremium(Map<String, dynamic> data) {
-    if (data['subscriptionStatus']?.toString() != 'premium') return false;
-    final expiry = data['subscriptionExpiry'];
-    final expiryDate = expiry is Timestamp ? expiry.toDate() : expiry is DateTime ? expiry : null;
-    return expiryDate == null || expiryDate.isAfter(DateTime.now());
-  }
 }
 
 class _ProfileMatchCard extends StatelessWidget {
@@ -142,6 +143,37 @@ class _RecommendationCard extends StatelessWidget {
             const SizedBox(height: 10),
             Row(children: [const Icon(Icons.public, size: 15, color: Color(0xFF6B7A95)), const SizedBox(width: 6), Text(recommendation.country, style: const TextStyle(fontSize: 13, color: Color(0xFF6B7A95)))])
           ],
+          if (recommendation.scholarshipId.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => ScholarshipDetailsScreen(
+                          data: recommendation.scholarshipData!,
+                        ),
+                      ),
+                    ),
+                    icon: const Icon(Icons.arrow_forward),
+                    label: const Text('View Scholarship'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF5F7FB),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: SavedScholarshipIconButton(
+                    scholarship: recommendation.scholarshipData!,
+                    iconSize: 22,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ]),
       );
 }
@@ -149,4 +181,3 @@ class _RecommendationCard extends StatelessWidget {
 class _AdvisorEmptyState extends StatelessWidget { const _AdvisorEmptyState(); @override Widget build(BuildContext context) => const Padding(padding: EdgeInsets.only(top: 38), child: Column(children: [Icon(Icons.auto_awesome_outlined, size: 48, color: Color(0xFF9CA3AF)), SizedBox(height: 10), Text('Your recommendations will appear here.', style: TextStyle(color: Color(0xFF6B7A95)))])); }
 class _ErrorState extends StatelessWidget { const _ErrorState({required this.message}); final String message; @override Widget build(BuildContext context) => Padding(padding: const EdgeInsets.only(top: 16), child: Text(message, textAlign: TextAlign.center, style: const TextStyle(color: Colors.redAccent))); }
 class _AdvisorMessage extends StatelessWidget { const _AdvisorMessage({required this.message}); final String message; @override Widget build(BuildContext context) => Scaffold(backgroundColor: const Color(0xFFF5F7FB), body: Center(child: Text(message, style: const TextStyle(color: Color(0xFF6B7A95))))); }
-class _PremiumAdvisorState extends StatelessWidget { const _PremiumAdvisorState({required this.onUpgrade}); final VoidCallback onUpgrade; @override Widget build(BuildContext context) => Scaffold(backgroundColor: const Color(0xFFF5F7FB), body: Center(child: Padding(padding: const EdgeInsets.all(28), child: Column(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.workspace_premium_outlined, size: 56, color: Color(0xFF5B7AE8)), const SizedBox(height: 16), const Text('ScholarBird AI is a Pro benefit', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 19, color: Color(0xFF1A1A2E))), const SizedBox(height: 8), const Text('Upgrade to get personalized scholarship recommendations.', textAlign: TextAlign.center, style: TextStyle(color: Color(0xFF6B7A95))), const SizedBox(height: 18), ElevatedButton(onPressed: onUpgrade, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF5B7AE8), foregroundColor: Colors.white), child: const Text('View ScholarBird Pro'))])))); }

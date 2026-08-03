@@ -3,11 +3,13 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../premium/premium_upgrade_screen.dart';
+import '../../widgets/scholarship_ui.dart';
+import '../../widgets/saved_scholarship_controls.dart';
 
 class ScholarshipDetailsScreen extends StatelessWidget {
-
   const ScholarshipDetailsScreen({
-    required this.data, super.key,
+    required this.data,
+    super.key,
     this.readOnly = false,
   });
   final Map<String, dynamic> data;
@@ -19,6 +21,8 @@ class ScholarshipDetailsScreen extends StatelessWidget {
     final imageUrl = (data['image'] ?? '').toString();
     final link = (data['link'] ?? '').toString();
     final country = (data['country'] ?? '').toString();
+    final university = (data['university'] ?? '').toString();
+    final source = (data['source'] ?? '').toString();
     final degree = (data['degree'] ?? '').toString();
     final field = (data['field'] ?? '').toString();
     final deadline = (data['deadline'] ?? '').toString();
@@ -32,17 +36,16 @@ class ScholarshipDetailsScreen extends StatelessWidget {
     final researchRequired = _asBool(data['researchRequired']);
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F7FB),
       appBar: AppBar(
         centerTitle: true,
         title: const Text('Scholarship Details'),
         actions: readOnly
             ? null
             : [
-                IconButton(
-                  icon: const Icon(Icons.bookmark_border),
-                  onPressed: () {
-                    _saveScholarship(context);
-                  },
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: SavedScholarshipIconButton(scholarship: data),
                 ),
               ],
       ),
@@ -52,18 +55,29 @@ class ScholarshipDetailsScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: imageUrl.isNotEmpty
-                  ? Image.network(
-                      imageUrl,
-                      height: 220,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
-                          _imagePlaceholder(),
-                    )
-                  : _imagePlaceholder(),
-            ),
+                borderRadius: BorderRadius.circular(24),
+                child: Stack(children: [
+                  ScholarshipImage(
+                      url: imageUrl,
+                      height: 240,
+                      heroTag: 'scholarship-image-${data['id'] ?? ''}'),
+                  Positioned.fill(
+                      child: DecoratedBox(
+                          decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                        Colors.transparent,
+                        Colors.black.withValues(alpha: .38)
+                      ])))),
+                  if (source.isNotEmpty)
+                    Positioned(
+                        left: 14,
+                        bottom: 14,
+                        child: _buildBadge(source.toUpperCase(),
+                            Colors.white.withValues(alpha: .92), sbBlue)),
+                ])),
             const SizedBox(height: 16),
             Wrap(
               spacing: 8,
@@ -99,32 +113,55 @@ class ScholarshipDetailsScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildInfoCard('Degree', degree.isEmpty ? 'N/A' : degree),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildInfoCard('Field', field.isEmpty ? 'N/A' : field),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildInfoCard(
-                    'Deadline',
-                    deadline.isEmpty ? 'N/A' : deadline,
-                  ),
-                ),
-              ],
-            ),
+            LayoutBuilder(
+                builder: (context, constraints) =>
+                    Wrap(spacing: 12, runSpacing: 12, children: [
+                      SizedBox(
+                          width: constraints.maxWidth > 640
+                              ? (constraints.maxWidth - 24) / 3
+                              : (constraints.maxWidth - 12) / 2,
+                          child: _buildInfoCard(
+                              'Degree', degree.isEmpty ? 'N/A' : degree)),
+                      SizedBox(
+                          width: constraints.maxWidth > 640
+                              ? (constraints.maxWidth - 24) / 3
+                              : (constraints.maxWidth - 12) / 2,
+                          child: _buildInfoCard(
+                              'Field', field.isEmpty ? 'N/A' : field)),
+                      SizedBox(
+                          width: constraints.maxWidth > 640
+                              ? (constraints.maxWidth - 24) / 3
+                              : (constraints.maxWidth - 12) / 2,
+                          child: _buildInfoCard(
+                              'Deadline', deadline.isEmpty ? 'N/A' : deadline)),
+                    ])),
+            if (university.isNotEmpty) ...[
+              const SizedBox(height: 20),
+              _buildSectionTitle('University'),
+              const SizedBox(height: 8),
+              _buildInfoCard('Host institution', university)
+            ],
+            if (fullyFunded ||
+                (data['amount'] ?? '').toString().isNotEmpty) ...[
+              const SizedBox(height: 20),
+              _buildSectionTitle('Funding'),
+              const SizedBox(height: 8),
+              _buildInfoCard(
+                  'Award value',
+                  fullyFunded
+                      ? 'Fully funded'
+                      : (data['amount'] ?? '').toString())
+            ],
             const SizedBox(height: 24),
             _buildSectionTitle('Eligibility Criteria'),
             const SizedBox(height: 12),
             _buildEligibilityItem(
               'Minimum CGPA: ${_formatCgpa(minCgpa, cgpaScale)}',
             ),
-            _buildEligibilityItem('IELTS Required: ${_displayValue(ieltsRequired)}'),
-            _buildEligibilityItem('Maximum Backlogs: ${_displayValue(maxBacklogs)}'),
+            _buildEligibilityItem(
+                'IELTS Required: ${_displayValue(ieltsRequired)}'),
+            _buildEligibilityItem(
+                'Maximum Backlogs: ${_displayValue(maxBacklogs)}'),
             _buildEligibilityItem(
               englishMediumAccepted
                   ? 'English Medium Accepted'
@@ -146,6 +183,78 @@ class ScholarshipDetailsScreen extends StatelessWidget {
                 color: Color(0xFF2F2F3A),
               ),
             ),
+            if (field.isNotEmpty) ...[
+              const SizedBox(height: 28),
+              _buildSectionTitle('Related scholarships'),
+              const SizedBox(height: 12),
+              SizedBox(
+                  height: 126,
+                  child: StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('scholarships')
+                        .where('field', isEqualTo: field)
+                        .limit(4)
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) return const SizedBox.shrink();
+                      final docs = snapshot.data!.docs
+                          .where((doc) => doc.id != data['id'])
+                          .toList();
+                      if (docs.isEmpty)
+                        return const Text(
+                            'More opportunities in this field will appear here.',
+                            style: TextStyle(color: Color(0xFF667085)));
+                      return ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: docs.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 12),
+                        itemBuilder: (_, index) {
+                          final item =
+                              docs[index].data() as Map<String, dynamic>;
+                          return SizedBox(
+                            width: 210,
+                            child: Material(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(16),
+                                onTap: () => Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                        builder: (_) =>
+                                            ScholarshipDetailsScreen(data: {
+                                              ...item,
+                                              'id': docs[index].id
+                                            }))),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(14),
+                                  child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                            (item['title'] ?? 'Scholarship')
+                                                .toString(),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.w700,
+                                                color: sbInk)),
+                                        const Spacer(),
+                                        Text((item['country'] ?? '').toString(),
+                                            style: const TextStyle(
+                                                color: sbBlue,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w700)),
+                                      ]),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  )),
+            ],
           ],
         ),
       ),
@@ -183,7 +292,8 @@ class ScholarshipDetailsScreen extends StatelessWidget {
                                   _applyScholarship(context);
                                 } else {
                                   Navigator.of(context).push(MaterialPageRoute(
-                                    builder: (_) => const PremiumUpgradeScreen(),
+                                    builder: (_) =>
+                                        const PremiumUpgradeScreen(),
                                   ));
                                 }
                               },
@@ -255,15 +365,8 @@ class ScholarshipDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _imagePlaceholder() => Container(
-        height: 220,
-        width: double.infinity,
-        alignment: Alignment.center,
-        color: const Color(0xFFE5E7EB),
-        child: const Text('No image available'),
-      );
-
-  Widget _buildBadge(String text, Color background, Color foreground) => Container(
+  Widget _buildBadge(String text, Color background, Color foreground) =>
+      Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: background,
@@ -398,13 +501,21 @@ class ScholarshipDetailsScreen extends StatelessWidget {
     if (user == null) return const _ApplicationAccess();
 
     try {
-      final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
       final data = userDoc.data() ?? <String, dynamic>{};
       final expiry = data['subscriptionExpiry'];
-      final expiryDate = expiry is Timestamp ? expiry.toDate() : expiry is DateTime ? expiry : null;
+      final expiryDate = expiry is Timestamp
+          ? expiry.toDate()
+          : expiry is DateTime
+              ? expiry
+              : null;
       final isPremium = data['subscriptionStatus']?.toString() == 'premium' &&
           (expiryDate == null || expiryDate.isAfter(DateTime.now()));
-      return _ApplicationAccess(canApply: isPremium, alreadyApplied: await _hasApplied());
+      return _ApplicationAccess(
+          canApply: isPremium, alreadyApplied: await _hasApplied());
     } on FirebaseException {
       // Failing closed prevents an application from bypassing subscription checks.
       return const _ApplicationAccess();
@@ -466,44 +577,6 @@ class ScholarshipDetailsScreen extends StatelessWidget {
     }
   }
 
-  Future<void> _saveScholarship(BuildContext context) async {
-    final user = FirebaseAuth.instance.currentUser;
-
-    if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please login first')),
-      );
-      return;
-    }
-
-    final docRef = FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .collection('savedScholarships')
-        .doc(data['id']);
-
-    final existing = await docRef.get();
-
-    if (existing.exists) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Already Saved')),
-      );
-      return;
-    }
-
-    await docRef.set({
-      'title': data['title'],
-      'country': data['country'],
-      'degree': data['degree'],
-      'image': data['image'],
-      'savedAt': Timestamp.now(),
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Scholarship Saved')),
-    );
-  }
-
   String _cleanDescription(String text) {
     // Remove URLs and HTML tags from description
     return text
@@ -515,7 +588,8 @@ class ScholarshipDetailsScreen extends StatelessWidget {
 }
 
 class _ApplicationAccess {
-  const _ApplicationAccess({this.canApply = false, this.alreadyApplied = false});
+  const _ApplicationAccess(
+      {this.canApply = false, this.alreadyApplied = false});
   final bool canApply;
   final bool alreadyApplied;
 }

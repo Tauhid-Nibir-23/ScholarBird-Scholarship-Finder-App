@@ -8,6 +8,7 @@ import 'screens/auth/signup_screen.dart';
 import 'admin/admin_dashboard.dart';
 import 'screens/home/home_screen.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'theme/scholarbird_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,14 +40,7 @@ class ScholarBirdApp extends StatelessWidget {
   Widget build(BuildContext context) => MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'ScholarBird',
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF5B7AE8),
-          background: const Color(0xFFF5F7FB),
-        ),
-        scaffoldBackgroundColor: const Color(0xFFF5F7FB),
-      ),
+      theme: ScholarBirdTheme.light(),
 
       // Start app from splash screen
       initialRoute: '/splash',

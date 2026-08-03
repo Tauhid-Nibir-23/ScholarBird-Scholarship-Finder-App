@@ -32,6 +32,7 @@ class ProfileMenuTile extends StatelessWidget {
     required this.title,
     required this.onTap,
     this.isDestructive = false,
+    this.subtitle,
     super.key,
   });
 
@@ -39,6 +40,7 @@ class ProfileMenuTile extends StatelessWidget {
   final String title;
   final VoidCallback onTap;
   final bool isDestructive;
+  final String? subtitle;
 
   @override
   Widget build(BuildContext context) => GestureDetector(
@@ -63,14 +65,7 @@ class ProfileMenuTile extends StatelessWidget {
                     size: 22,
                   ),
                   const SizedBox(width: 12),
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: isDestructive ? Colors.red.shade600 : sbText,
-                    ),
-                  ),
+                  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: TextStyle(fontSize: 16,fontWeight: FontWeight.w600,color: isDestructive ? Colors.red.shade600 : sbText)), if (subtitle != null) Text(subtitle!, style: const TextStyle(fontSize: 12,color: sbSecondaryText))]),
                 ],
               ),
               Icon(
@@ -287,9 +282,11 @@ class ProfileEmptyState extends StatelessWidget {
   final Widget? action;
 
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-        child: Column(
+  Widget build(BuildContext context) => Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
@@ -329,6 +326,7 @@ class ProfileEmptyState extends StatelessWidget {
               action!,
             ],
           ],
+          ),
         ),
       );
 }

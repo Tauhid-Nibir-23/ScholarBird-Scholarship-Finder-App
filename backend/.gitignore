@@ -1,0 +1,61 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+.python-version
+pyvenv.cfg
+
+# Test / coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.mypy_cache/
+.ruff_cache/
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+
+# Logs (keep the directory via .gitkeep)
+backend/logs/*.log
+backend/logs/*.log.*
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+.env
+backend\.env.example
+
+# Environment
+.env
+backend/.env
+backend/.env.example
+
+# Firebase Secret
+android/app/scholarbird-6b7f3-firebase-adminsdk-fbsvc-e920279645.json
+
+# Puku
+.puku/
+lib/.puku/

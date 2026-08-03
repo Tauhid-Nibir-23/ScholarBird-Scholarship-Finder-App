@@ -5,6 +5,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../applications/my_applications.dart';
 import '../profile/saved_scholarships_screen.dart';
 import '../scholarship/scholarship_details.dart';
+import '../premium/manage_subscription_screen.dart';
+import '../premium/premium_upgrade_screen.dart';
+import '../../services/subscription_service.dart';
+import '../../widgets/premium_banner.dart';
+import '../../services/pdf_service.dart';
+import '../../widgets/saved_scholarship_controls.dart';
 
 class HomeContent extends StatefulWidget {
   const HomeContent({required this.onExploreTap, super.key});
@@ -93,18 +99,20 @@ class _HomeContentState extends State<HomeContent> {
                     controller: _bannerController,
                     physics: const BouncingScrollPhysics(),
                     children: [
-                      _buildPromoBanner(
-                        context,
-                        title: 'Unlock ScholarBird Pro!',
-                        subtitle:
-                            'Get exclusive access to 500+ hidden scholarships and expert SOP/Resume reviews.',
-                        buttonText: 'Upgrade Now',
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF0F172A), Color(0xFF1E3A8A)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        icon: Icons.workspace_premium_outlined,
+                      StreamBuilder(
+                        stream: SubscriptionService().watch(),
+                        builder: (context, snapshot) {
+                          final subscription = snapshot.data;
+                          if (subscription == null) return const SizedBox();
+                          return PremiumBanner(
+                            subscription: subscription,
+                            onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                              builder: (_) => subscription.isPremium
+                                  ? const ManageSubscriptionScreen()
+                                  : const PremiumUpgradeScreen(),
+                            )),
+                          );
+                        },
                       ),
                       _buildPromoBanner(
                         context,
@@ -119,6 +127,14 @@ class _HomeContentState extends State<HomeContent> {
                         ),
                         icon: Icons.menu_book_outlined,
                         isDarkText: true,
+                        onTap: () async {
+                          try {
+                            await PdfService.downloadUserGuide();
+                            if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('ScholarBird User Guide downloaded successfully.')));
+                          } catch (_) {
+                            if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Unable to generate the User Guide. Please try again.')));
+                          }
+                        },
                       ),
                     ],
                   ),
@@ -274,7 +290,9 @@ class _HomeContentState extends State<HomeContent> {
 
           // Scholarships Carousel
           SizedBox(
-            height: 200,
+            // Each card includes a badge, image, save control, and deadline.
+            // Keep enough vertical room for the full card on compact screens.
+            height: 224,
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance.collection('scholarships').snapshots(),
               builder: (context, snapshot) {
@@ -292,7 +310,10 @@ class _HomeContentState extends State<HomeContent> {
                 }
 
                 final items = allData
-                    .map((doc) => doc.data()! as Map<String, dynamic>)
+                    .map((doc) => <String, dynamic>{
+                          ...doc.data()! as Map<String, dynamic>,
+                          'id': doc.id,
+                        })
                     .where((s) => s.isNotEmpty)
                     .toList();
 
@@ -345,7 +366,7 @@ class _HomeContentState extends State<HomeContent> {
           width: 160,
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: const Color(0xFFE5E7EB),
               width: 1,
@@ -408,6 +429,14 @@ class _HomeContentState extends State<HomeContent> {
                         ),
                 ),
               ),
+                const SizedBox(height: 6),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: SavedScholarshipIconButton(
+                    scholarship: s,
+                    iconSize: 18,
+                  ),
+                ),
               const SizedBox(height: 8),
               Text(
                 title.isEmpty ? 'Untitled scholarship' : title,
@@ -539,6 +568,7 @@ class _HomeContentState extends State<HomeContent> {
     required LinearGradient gradient,
     required IconData icon,
     bool isDarkText = false,
+    VoidCallback? onTap,
   }) {
     final titleColor = isDarkText ? const Color(0xFF0F172A) : Colors.white;
     final subtitleColor =
@@ -608,7 +638,7 @@ class _HomeContentState extends State<HomeContent> {
                     borderRadius: BorderRadius.circular(10),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(10),
-                      onTap: () {
+                      onTap: onTap ?? () {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('Coming Soon...')),
                         );

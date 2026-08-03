@@ -17,27 +17,60 @@ class GeminiService {
     List<Scholarship> scholarships,
   ) async {
     if (scholarships.isEmpty) return <ScholarshipRecommendation>[];
-    final apiKey = dotenv.env['GEMINI_API_KEY']?.trim();
+    // Support the existing GOOGLE_API_KEY name as well as the app-specific
+    // GEMINI_API_KEY name so existing local configurations keep working.
+    final apiKey =
+        (dotenv.env['GEMINI_API_KEY'] ?? dotenv.env['GOOGLE_API_KEY'])?.trim();
     if (apiKey == null || apiKey.isEmpty || apiKey == 'YOUR_KEY') {
       throw const GeminiConfigurationException(
-        'Gemini API key is missing. Add GEMINI_API_KEY to .env and restart the app.',
+        'Gemini API key is missing. Add GEMINI_API_KEY or GOOGLE_API_KEY to .env and restart the app.',
       );
     }
 
-    final model = _model ?? GenerativeModel(
-      model: 'gemini-1.5-flash',
-      apiKey: apiKey,
-      generationConfig: GenerationConfig(responseMimeType: 'application/json'),
-    );
+    final models = _model == null
+        ? <GenerativeModel>[
+            _createModel('gemini-3.5-flash', apiKey),
+            // A lower-demand model keeps recommendations available when the
+            // primary Flash endpoint is temporarily at capacity.
+            _createModel('gemini-3.5-flash-lite', apiKey),
+          ]
+        : <GenerativeModel>[_model!];
 
-    try {
-      final response = await model.generateContent([Content.text(_prompt(user, scholarships))]);
-      return _parseRecommendations(response.text);
-    } on GenerativeAIException catch (error) {
-      throw GeminiRequestException('Gemini could not generate recommendations: ${error.message}');
-    } on FormatException {
-      throw const GeminiRequestException('Gemini returned an unreadable recommendation response.');
+    GenerativeAIException? lastError;
+    for (final model in models) {
+      for (var attempt = 0; attempt < 2; attempt++) {
+        try {
+          final response = await model.generateContent([Content.text(_prompt(user, scholarships))]);
+          return _parseRecommendations(response.text);
+        } on GenerativeAIException catch (error) {
+          lastError = error;
+          if (!_isTemporaryUnavailable(error) || attempt == 1) break;
+          await Future<void>.delayed(Duration(seconds: attempt + 1));
+        } on FormatException {
+          throw const GeminiRequestException('Gemini returned an unreadable recommendation response.');
+        }
+      }
     }
+
+    if (lastError != null && _isTemporaryUnavailable(lastError)) {
+      throw const GeminiRequestException(
+        'Gemini is temporarily busy. Please try again in a moment.',
+      );
+    }
+    throw GeminiRequestException(
+      'Gemini could not generate recommendations: ${lastError?.message ?? 'Unknown error'}',
+    );
+  }
+
+  GenerativeModel _createModel(String modelName, String apiKey) => GenerativeModel(
+        model: modelName,
+        apiKey: apiKey,
+        generationConfig: GenerationConfig(responseMimeType: 'application/json'),
+      );
+
+  bool _isTemporaryUnavailable(GenerativeAIException error) {
+    final message = error.message.toLowerCase();
+    return message.contains('503') || message.contains('unavailable') || message.contains('high demand');
   }
 
   String _prompt(UserProfile user, List<Scholarship> scholarships) => '''

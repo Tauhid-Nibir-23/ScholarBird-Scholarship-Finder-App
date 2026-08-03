@@ -1,11 +1,133 @@
-import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'profile_widgets.dart';
-import '../scholarship/scholarship_details.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 
-class SavedScholarshipsScreen extends StatelessWidget {
+import '../../services/saved_scholarships_service.dart';
+import '../../widgets/saved_empty_state.dart';
+import '../../widgets/saved_scholarship_card.dart';
+import '../scholarship/scholarship_details.dart';
+import 'profile_widgets.dart';
+
+enum _SavedSortOption { newest, deadline, country, degree }
+
+class SavedScholarshipsScreen extends StatefulWidget {
   const SavedScholarshipsScreen({super.key});
+
+  @override
+  State<SavedScholarshipsScreen> createState() => _SavedScholarshipsScreenState();
+}
+
+class _SavedScholarshipsScreenState extends State<SavedScholarshipsScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  final Set<String> _selectedIds = <String>{};
+
+  _SavedSortOption _sortOption = _SavedSortOption.newest;
+  String _countryFilter = '';
+  String _degreeFilter = '';
+  String _searchQuery = '';
+  bool _gridMode = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text.trim().toLowerCase();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _refresh() async {
+    await Future<void>.delayed(const Duration(milliseconds: 180));
+  }
+
+  List<Map<String, dynamic>> _filterAndSort(List<Map<String, dynamic>> items) {
+    final filtered = items.where((item) {
+      final title = (item['title'] ?? '').toString().toLowerCase();
+      final country = (item['country'] ?? '').toString().toLowerCase();
+      final degree = (item['degree'] ?? '').toString().toLowerCase();
+      final field = (item['field'] ?? '').toString().toLowerCase();
+
+      if (_searchQuery.isNotEmpty &&
+          !title.contains(_searchQuery) &&
+          !country.contains(_searchQuery) &&
+          !degree.contains(_searchQuery) &&
+          !field.contains(_searchQuery)) {
+        return false;
+      }
+
+      if (_countryFilter.isNotEmpty && country != _countryFilter.toLowerCase()) {
+        return false;
+      }
+
+      if (_degreeFilter.isNotEmpty && degree != _degreeFilter.toLowerCase()) {
+        return false;
+      }
+
+      return true;
+    }).toList();
+
+    filtered.sort((a, b) {
+      switch (_sortOption) {
+        case _SavedSortOption.newest:
+          return _parseSavedAt(b['savedAt']).compareTo(_parseSavedAt(a['savedAt']));
+        case _SavedSortOption.deadline:
+          return _parseDeadline(a['deadline']).compareTo(_parseDeadline(b['deadline']));
+        case _SavedSortOption.country:
+          return (a['country'] ?? '').toString().toLowerCase().compareTo((b['country'] ?? '').toString().toLowerCase());
+        case _SavedSortOption.degree:
+          return (a['degree'] ?? '').toString().toLowerCase().compareTo((b['degree'] ?? '').toString().toLowerCase());
+      }
+    });
+
+    return filtered;
+  }
+
+  DateTime _parseSavedAt(dynamic value) {
+    if (value is Timestamp) return value.toDate();
+    if (value is DateTime) return value;
+    return DateTime.fromMillisecondsSinceEpoch(0);
+  }
+
+  DateTime _parseDeadline(dynamic value) {
+    final parsed = DateTime.tryParse((value ?? '').toString().trim());
+    return parsed ?? DateTime.fromMillisecondsSinceEpoch(0);
+  }
+
+  Future<void> _removeSelected() async {
+    final ids = _selectedIds.toList();
+    if (ids.isEmpty) return;
+
+    await SavedScholarshipsService.instance.removeMany(ids);
+    if (!mounted) return;
+    setState(() {
+      _selectedIds.clear();
+    });
+  }
+
+  Future<void> _clearAll() async {
+    await SavedScholarshipsService.instance.clearAllSaved();
+    if (!mounted) return;
+    setState(() {
+      _selectedIds.clear();
+    });
+  }
+
+  void _toggleSelection(String id) {
+    setState(() {
+      if (_selectedIds.contains(id)) {
+        _selectedIds.remove(id);
+      } else {
+        _selectedIds.add(id);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -16,44 +138,54 @@ class SavedScholarshipsScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
+        centerTitle: true,
         title: const Text(
           'Saved Scholarships',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: sbText,
-          ),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: sbText),
         ),
-        centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded, color: sbText),
           onPressed: () => Navigator.of(context).pop(),
         ),
+        actions: [
+          if (_selectedIds.isNotEmpty)
+            IconButton(
+              tooltip: 'Remove selected',
+              icon: const Icon(Icons.delete_outline),
+              onPressed: () async {
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (_) => AlertDialog(
+                    title: const Text('Remove selected?'),
+                    content: const Text('This removes the selected saved scholarships from your account.'),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+                      TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Remove')),
+                    ],
+                  ),
+                );
+                if (confirmed == true) {
+                  await _removeSelected();
+                }
+              },
+            ),
+          IconButton(
+            tooltip: _gridMode ? 'List view' : 'Grid view',
+            icon: Icon(_gridMode ? Icons.view_list_outlined : Icons.grid_view_outlined),
+            onPressed: () => setState(() => _gridMode = !_gridMode),
+          ),
+        ],
       ),
       body: currentUser == null
           ? const Center(
               child: Text(
                 'Please log in to view saved scholarships.',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
-                  color: sbSecondaryText,
-                ),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: sbSecondaryText),
               ),
             )
-          : StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-              stream: FirebaseFirestore.instance
-                  .collection('users')
-                  .doc(currentUser.uid)
-                  .collection('savedScholarships')
-                  .snapshots(),
+          : StreamBuilder<List<Map<String, dynamic>>>(
+              stream: SavedScholarshipsService.instance.watchSavedScholarshipsWithFallback(),
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(color: sbPrimary),
-                  );
-                }
-
                 if (snapshot.hasError) {
                   return const ProfileEmptyState(
                     title: 'Unable to load saved scholarships',
@@ -62,191 +194,222 @@ class SavedScholarshipsScreen extends StatelessWidget {
                   );
                 }
 
-                final docs = snapshot.data?.docs ?? [];
-                if (docs.isEmpty) {
-                  return const ProfileEmptyState(
-                    title: 'No saved scholarships yet',
-                    message: 'No saved scholarships yet',
-                    icon: Icons.bookmark_border,
+                final rawItems = snapshot.data ?? const <Map<String, dynamic>>[];
+                final items = _filterAndSort(rawItems);
+
+                if (rawItems.isEmpty) {
+                  return SavedEmptyState(
+                    onBrowse: () => Navigator.of(context).maybePop(),
                   );
                 }
 
-                return ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                  itemCount: docs.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final data = docs[index].data();
-                    final title = (data['title'] ?? 'Scholarship').toString();
-                    final country = (data['country'] ?? '').toString();
-                    final degree = (data['degree'] ?? '').toString();
-                    final savedDate = _formatDate(data['savedAt']);
-                    final imageUrl = (data['imageUrl'] ?? data['image'] ?? '').toString();
+                if (items.isEmpty) {
+                  return const ProfileEmptyState(
+                    title: 'No matches found',
+                    message: 'Try adjusting search or filters.',
+                    icon: Icons.search_off_outlined,
+                  );
+                }
 
-                    return Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: sbBorder),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.04),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(10),
-                              child: _buildImage(imageUrl),
-                            ),
-                          ),
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.only(right: 12, top: 12, bottom: 12),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                final countryOptions = rawItems
+                    .map((item) => (item['country'] ?? '').toString())
+                    .where((value) => value.trim().isNotEmpty)
+                    .toSet()
+                    .toList()
+                  ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+                final degreeOptions = rawItems
+                    .map((item) => (item['degree'] ?? '').toString())
+                    .where((value) => value.trim().isNotEmpty)
+                    .toSet()
+                    .toList()
+                  ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+
+                return RefreshIndicator(
+                  onRefresh: _refresh,
+                  child: CustomScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    slivers: [
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              TextField(
+                                controller: _searchController,
+                                decoration: InputDecoration(
+                                  hintText: 'Search saved scholarships',
+                                  prefixIcon: const Icon(Icons.search),
+                                  suffixIcon: _searchController.text.isEmpty
+                                      ? null
+                                      : IconButton(
+                                          icon: const Icon(Icons.close),
+                                          onPressed: _searchController.clear,
+                                        ),
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Wrap(
+                                spacing: 10,
+                                runSpacing: 10,
                                 children: [
-                                  Text(
-                                    title,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: sbText,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.public, size: 14, color: sbSecondaryText),
-                                      const SizedBox(width: 6),
-                                      Expanded(
-                                        child: Text(
-                                          country.isEmpty ? 'Global' : country,
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w400,
-                                            color: sbSecondaryText,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.school_outlined,
-                                        size: 14,
-                                        color: sbSecondaryText,
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Expanded(
-                                        child: Text(
-                                          degree.isEmpty ? 'Degree not available' : degree,
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w400,
-                                            color: sbSecondaryText,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  if (savedDate.isNotEmpty) ...[
-                                    const SizedBox(height: 6),
-                                    Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.bookmark_added_outlined,
-                                          size: 14,
-                                          color: sbSecondaryText,
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          savedDate,
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w400,
-                                            color: sbSecondaryText,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                    const SizedBox(height: 10),
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: TextButton(
-                                        onPressed: () {
-                                          _openScholarshipDetails(
-                                            context,
-                                            docs[index].id,
-                                            data,
-                                          );
-                                        },
-                                        style: TextButton.styleFrom(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 6,
-                                          ),
-                                          backgroundColor: sbPrimary.withValues(alpha: 0.08),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                        ),
-                                        child: const Text(
-                                          'View Details',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                            color: sbPrimary,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
+                                  _filterChip('Newest saved', _sortOption == _SavedSortOption.newest, () => setState(() => _sortOption = _SavedSortOption.newest)),
+                                  _filterChip('Deadline', _sortOption == _SavedSortOption.deadline, () => setState(() => _sortOption = _SavedSortOption.deadline)),
+                                  _filterChip('Country', _sortOption == _SavedSortOption.country, () => setState(() => _sortOption = _SavedSortOption.country)),
+                                  _filterChip('Degree', _sortOption == _SavedSortOption.degree, () => setState(() => _sortOption = _SavedSortOption.degree)),
                                 ],
                               ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _dropdownFilter(
+                                      label: 'Country',
+                                      value: _countryFilter,
+                                      options: countryOptions,
+                                      onChanged: (value) => setState(() => _countryFilter = value ?? ''),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: _dropdownFilter(
+                                      label: 'Degree',
+                                      value: _degreeFilter,
+                                      options: degreeOptions,
+                                      onChanged: (value) => setState(() => _degreeFilter = value ?? ''),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              if (_selectedIds.isNotEmpty) ...[
+                                const SizedBox(height: 12),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        '${_selectedIds.length} selected',
+                                        style: const TextStyle(fontWeight: FontWeight.w600, color: sbText),
+                                      ),
+                                    ),
+                                    TextButton(
+                                      onPressed: () async {
+                                        final confirmed = await showDialog<bool>(
+                                          context: context,
+                                          builder: (_) => AlertDialog(
+                                            title: const Text('Clear all saved?'),
+                                            content: const Text('This removes every saved scholarship from your account.'),
+                                            actions: [
+                                              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+                                              TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Clear all')),
+                                            ],
+                                          ),
+                                        );
+                                        if (confirmed == true) {
+                                          await _clearAll();
+                                        }
+                                      },
+                                      child: const Text('Clear all saved'),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                      if (_gridMode)
+                        SliverPadding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                          sliver: SliverGrid(
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              childAspectRatio: 0.72,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                            ),
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                                final item = items[index];
+                                final id = (item['id'] ?? '').toString();
+                                return SavedScholarshipCard(
+                                  data: item,
+                                  isSelected: _selectedIds.contains(id),
+                                  selectionMode: _selectedIds.isNotEmpty,
+                                  onTap: () => _openScholarshipDetails(context, id, item),
+                                  onLongPress: () => _toggleSelection(id),
+                                );
+                              },
+                              childCount: items.length,
                             ),
                           ),
-                        ],
-                      ),
-                    );
-                  },
+                        )
+                      else
+                        SliverPadding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                          sliver: SliverList(
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                                final item = items[index];
+                                final id = (item['id'] ?? '').toString();
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: SavedScholarshipCard(
+                                    data: item,
+                                    isSelected: _selectedIds.contains(id),
+                                    selectionMode: _selectedIds.isNotEmpty,
+                                    onTap: () => _openScholarshipDetails(context, id, item),
+                                    onLongPress: () => _toggleSelection(id),
+                                  ),
+                                );
+                              },
+                              childCount: items.length,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 );
               },
             ),
     );
   }
 
-  Widget _buildImage(String imageUrl) {
-    const size = 56.0;
-    if (imageUrl.isEmpty) {
-      return Container(
-        width: size,
-        height: size,
-        color: sbPrimary.withValues(alpha: 0.1),
-        child: const Icon(Icons.school_outlined, color: sbPrimary, size: 30),
-      );
-    }
+  Widget _filterChip(String label, bool selected, VoidCallback onTap) {
+    return FilterChip(
+      label: Text(label),
+      selected: selected,
+      onSelected: (_) => onTap(),
+    );
+  }
 
-    return Image.network(
-      imageUrl,
-      width: size,
-      height: size,
-      fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => Container(
-        width: size,
-        height: size,
-        color: sbPrimary.withValues(alpha: 0.1),
-        child: const Icon(Icons.school_outlined, color: sbPrimary, size: 30),
+  Widget _dropdownFilter({
+    required String label,
+    required String value,
+    required List<String> options,
+    required ValueChanged<String?> onChanged,
+  }) {
+    return DropdownButtonFormField<String>(
+      initialValue: value.isEmpty ? null : value,
+      decoration: InputDecoration(
+        labelText: label,
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
       ),
+      items: [
+        const DropdownMenuItem<String>(value: '', child: Text('All')),
+        ...options.map((option) => DropdownMenuItem<String>(value: option, child: Text(option))),
+      ],
+      onChanged: onChanged,
     );
   }
 
@@ -262,82 +425,33 @@ class SavedScholarshipsScreen extends StatelessWidget {
       return;
     }
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(
-        child: CircularProgressIndicator(color: sbPrimary),
-      ),
-    );
-
     try {
-      final doc = await FirebaseFirestore.instance
-          .collection('scholarships')
-          .doc(scholarshipId)
-          .get();
-
+      final doc = await FirebaseFirestore.instance.collection('scholarships').doc(scholarshipId).get();
       if (!context.mounted) return;
-      Navigator.of(context).pop();
 
-      if (!doc.exists) {
+      final data = <String, dynamic>{
+        ...fallbackData,
+        if (doc.data() != null) ...doc.data()!,
+        'id': scholarshipId,
+      };
+
+      if (!doc.exists && data.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Scholarship not found')),
         );
         return;
       }
 
-      final data = doc.data() ?? {};
-      data['id'] = scholarshipId;
-
-      Navigator.push(
-        context,
+      Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) => ScholarshipDetailsScreen(
-            data: {
-              ...fallbackData,
-              ...data,
-            },
-            readOnly: true,
-          ),
+          builder: (_) => ScholarshipDetailsScreen(data: data),
         ),
       );
     } catch (_) {
       if (!context.mounted) return;
-      Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Unable to load scholarship')),
       );
     }
-  }
-
-  String _formatDate(dynamic raw) {
-    if (raw == null) return '';
-    DateTime? date;
-    if (raw is Timestamp) {
-      date = raw.toDate();
-    } else if (raw is DateTime) {
-      date = raw;
-    } else if (raw is String) {
-      date = DateTime.tryParse(raw);
-    }
-
-    if (date == null) return raw.toString();
-
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-
-    return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
 }
