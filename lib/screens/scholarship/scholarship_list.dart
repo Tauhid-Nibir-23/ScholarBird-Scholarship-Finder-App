@@ -1,9 +1,25 @@
+﻿/// Search and browse screen for the full scholarship catalog.
+library;
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ScholarBird/screens/scholarship/scholarship_details.dart';
 import 'package:ScholarBird/widgets/scholarship_ui.dart';
+import '../../widgets/premium_feature.dart';
+import '../../widgets/premium_guard.dart';
 import '../../widgets/saved_scholarship_controls.dart';
 
+/// Builds a fast, 200ms fade page route to replace MaterialPageRoute's default
+/// 300ms slide. Keeps the rest of the app snappier without changing UX flow.
+PageRouteBuilder<T> _fastPageRoute<T>(Widget page) => PageRouteBuilder<T>(
+      transitionDuration: const Duration(milliseconds: 200),
+      reverseTransitionDuration: const Duration(milliseconds: 160),
+      pageBuilder: (_, __, ___) => page,
+      transitionsBuilder: (_, anim, __, child) =>
+          FadeTransition(opacity: anim, child: child),
+    );
+
+/// Manages filtering, sorting, and navigation for scholarship search results.
 class ScholarshipsScreen extends StatefulWidget {
   const ScholarshipsScreen({super.key, this.onMenuTap});
 
@@ -31,12 +47,27 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
   String _selectedResearch = '';
   double? _maximumMinCgpa;
   int? _maximumBacklogs;
-  String _searchQuery = '';
-  String _selectedSort = 'Most Relevant';
+  List<String> _searchTokens = const [];
+  String _selectedSort = 'Deadline: Ascending';
+
+  // Memoization for the filter pipeline. _lastFilterSignature lets us skip the
+  // filter pass entirely when the user toggles between two filter combinations
+  // that produce the same result set (e.g. clearing a chip that was already
+  // empty). _cachedFiltered keeps the previous result list around for the
+  // signature match path.
+  String _lastFilterSignature = '';
+  List<Map<String, dynamic>> _cachedFiltered = const [];
+
+  // Debounce timer for search input. Without it, every keystroke triggers a
+  // full filter+sort pass over the entire scholarships list, which makes the
+  // UI feel laggy on large datasets.
+  Timer? _searchDebounce;
 
   static const List<String> sortOptions = [
     'Most Relevant',
     'Newest',
+    'Deadline: Ascending',
+    'Deadline: Descending',
     'Deadline Soon',
     'Fully Funded First',
     'Alphabetical',
@@ -45,15 +76,26 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
   @override
   void initState() {
     super.initState();
-    _searchController.addListener(() {
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  void _onSearchChanged() {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 250), () {
+      if (!mounted) return;
+      final raw = _searchController.text.trim().toLowerCase();
       setState(() {
-        _searchQuery = _searchController.text.toLowerCase();
+        _searchTokens = raw.isEmpty
+            ? const []
+            : raw.split(RegExp(r'\s+'));
       });
     });
   }
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
+    _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
   }
@@ -116,9 +158,12 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
   }
 
   bool _matchesFilters(Map<String, dynamic> scholarship) {
-    if (_searchQuery.isNotEmpty) {
+    if (_searchTokens.isNotEmpty) {
       // The upload pipeline supplies search_tokens. Fall back to the existing
       // document fields so older Firestore records remain searchable too.
+      // Tokens are precomputed once per keystroke (debounced) instead of
+      // recomputed per scholarship, so the filter stays O(n) without an
+      // extra regex evaluation per row.
       final searchableValues = [
         scholarship['title'],
         scholarship['university'],
@@ -137,8 +182,8 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
               : [value.toString()])
           .join(' ')
           .toLowerCase();
-      if (!_searchQuery.split(RegExp(r'\s+')).every(haystack.contains)) {
-        return false;
+      for (final token in _searchTokens) {
+        if (!haystack.contains(token)) return false;
       }
     }
 
@@ -186,9 +231,6 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
         _number(scholarship['maxBacklogs']).round() > _maximumBacklogs!) {
       return false;
     }
-    if (_selectedDeadline.isNotEmpty && !_matchesDeadline(scholarship)) {
-      return false;
-    }
     if (_selectedDeadlineMonth != null &&
         _parseDeadline(scholarship['deadline']?.toString() ?? '')?.month !=
             _selectedDeadlineMonth) {
@@ -216,18 +258,6 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
       ? value.toDouble()
       : double.tryParse(value?.toString() ?? '') ?? 0;
 
-  bool _matchesDeadline(Map<String, dynamic> scholarship) {
-    final deadline = _parseDeadline(scholarship['deadline']?.toString() ?? '');
-    if (_selectedDeadline == 'Open') {
-      return deadline == null || !deadline.isBefore(DateTime.now());
-    }
-    if (deadline == null) return false;
-    final days = deadline.difference(DateTime.now()).inDays;
-    return _selectedDeadline == 'Next 30 days'
-        ? days >= 0 && days <= 30
-        : days >= 0 && days <= 90;
-  }
-
   void _resetFilters() {
     _searchController.clear();
     setState(() {
@@ -238,7 +268,7 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
       _selectedIelts = _selectedEnglishMedium = _selectedResearch = '';
       _maximumMinCgpa = null;
       _maximumBacklogs = null;
-      _selectedSort = 'Most Relevant';
+      _selectedSort = 'Deadline: Ascending';
     });
   }
 
@@ -252,6 +282,93 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
           documents.map(_buildScholarshipData).toList(growable: false);
     }
     return _cachedScholarships;
+  }
+
+  /// Builds the filter options used by the chip row. Re-run only when the
+  /// underlying document list identity changes, never on every keystroke.
+  List<String> _fieldOptions(List<QueryDocumentSnapshot<Map<String, dynamic>>> docs) =>
+      _withSelected(_collectOptions(docs, 'field'), _selectedField);
+
+  List<String> _degreeOptions(List<QueryDocumentSnapshot<Map<String, dynamic>>> docs) =>
+      _withSelected(_collectDegreeOptions(docs), _selectedDegree);
+
+  List<String> _countryOptions(List<QueryDocumentSnapshot<Map<String, dynamic>>> docs) =>
+      _withSelected(_collectOptions(docs, 'country'), _selectedCountry);
+
+  List<String> _fundingOptions(List<QueryDocumentSnapshot<Map<String, dynamic>>> docs) {
+    final merged = {
+      ..._collectOptions(docs, 'funding'),
+      ..._collectOptions(docs, 'fundingType'),
+      ..._collectOptions(docs, 'amount'),
+    }.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    return _withSelected(merged, _selectedFunding);
+  }
+
+  /// Stable composite key for the dependencies that affect filter/sort output.
+  /// Returning a single string lets us cheaply detect "nothing changed" without
+  /// comparing the whole filter state field by field.
+  String _filterSignature() => [
+        _selectedField,
+        _selectedDegree,
+        _selectedCountry,
+        _selectedFunding,
+        _selectedDeadline,
+        _selectedDeadlineMonth,
+        _selectedIelts,
+        _selectedEnglishMedium,
+        _selectedResearch,
+        _maximumMinCgpa,
+        _maximumBacklogs,
+        _selectedSort,
+        _searchTokens.join(' '),
+      ].join('|');
+
+  /// Applies the active filter+sort to the cached scholarships list. Memoizes
+  /// the output by filter signature, so flipping chips that don't change the
+  /// result set skips the entire filter pass.
+  List<Map<String, dynamic>> _applyFiltersAndSort() {
+    final signature = _filterSignature();
+    if (signature == _lastFilterSignature && _cachedFiltered.isNotEmpty) {
+      return _cachedFiltered;
+    }
+    final all = _cachedScholarships;
+    final filtered = all.where(_matchesFilters).toList(growable: false);
+    final sorted = List<Map<String, dynamic>>.from(filtered);
+
+    switch (_selectedSort) {
+      case 'Deadline: Ascending':
+      case 'Deadline: Descending':
+      case 'Deadline Soon':
+        sorted.sort((a, b) {
+          final aDate = _parseDeadline(a['deadline'].toString());
+          final bDate = _parseDeadline(b['deadline'].toString());
+          if (aDate == null && bDate == null) return 0;
+          if (aDate == null) return 1;
+          if (bDate == null) return -1;
+          // Ascending = soonest first; Descending = furthest deadline first.
+          final ascending =
+              _selectedSort != 'Deadline: Descending';
+          return ascending ? aDate.compareTo(bDate) : bDate.compareTo(aDate);
+        });
+        break;
+      case 'Alphabetical':
+        sorted.sort((a, b) => a['title']
+            .toString()
+            .toLowerCase()
+            .compareTo(b['title'].toString().toLowerCase()));
+        break;
+      case 'Fully Funded First':
+        sorted.sort((a, b) => _fundingRank(b).compareTo(_fundingRank(a)));
+        break;
+      case 'Newest':
+        sorted.sort((a, b) => _newestValue(b).compareTo(_newestValue(a)));
+        break;
+    }
+
+    _lastFilterSignature = signature;
+    _cachedFiltered = sorted;
+    return sorted;
   }
 
   String _getStatusBadge(Map<String, dynamic> s) {
@@ -362,7 +479,7 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
                       ),
                     ),
                     const Text(
-                      'ScholarBird',
+                      'Scholarships',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
@@ -433,29 +550,11 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
                       .collection('scholarships')
                       .snapshots(),
                   builder: (context, snapshot) {
-                    final allData = snapshot.data?.docs ?? [];
-                    final fieldOptions = _withSelected(
-                      _collectOptions(allData, 'field'),
-                      _selectedField,
-                    );
-                    final degreeOptions = _withSelected(
-                      _collectDegreeOptions(allData),
-                      _selectedDegree,
-                    );
-                    final countryOptions = _withSelected(
-                      _collectOptions(allData, 'country'),
-                      _selectedCountry,
-                    );
-                    final fundingOptions = _withSelected(
-                      {
-                        ..._collectOptions(allData, 'funding'),
-                        ..._collectOptions(allData, 'fundingType'),
-                        ..._collectOptions(allData, 'amount'),
-                      }.toList()
-                        ..sort((a, b) =>
-                            a.toLowerCase().compareTo(b.toLowerCase())),
-                      _selectedFunding,
-                    );
+                    // Admin hide/unhide is an operational publishing control;
+                    // retain legacy documents that do not yet carry the flag.
+                    final allData = (snapshot.data?.docs ?? const [])
+                        .where((doc) => doc.data()['isHidden'] != true)
+                        .toList();
 
                     Widget listContent;
                     if (snapshot.hasError) {
@@ -475,35 +574,12 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
                           description:
                               'New opportunities will appear here as they are published.');
                     } else {
-                      final filteredData = _scholarshipsFor(allData)
-                          .where(_matchesFilters)
-                          .toList(growable: false);
-
-                      final sortedData =
-                          List<Map<String, dynamic>>.from(filteredData);
-                      if (_selectedSort == 'Deadline Soon') {
-                        sortedData.sort((a, b) {
-                          final aDate =
-                              _parseDeadline(a['deadline'].toString());
-                          final bDate =
-                              _parseDeadline(b['deadline'].toString());
-                          if (aDate == null && bDate == null) return 0;
-                          if (aDate == null) return 1;
-                          if (bDate == null) return -1;
-                          return aDate.compareTo(bDate);
-                        });
-                      } else if (_selectedSort == 'Alphabetical') {
-                        sortedData.sort((a, b) => a['title']
-                            .toString()
-                            .toLowerCase()
-                            .compareTo(b['title'].toString().toLowerCase()));
-                      } else if (_selectedSort == 'Fully Funded First') {
-                        sortedData.sort((a, b) =>
-                            _fundingRank(b).compareTo(_fundingRank(a)));
-                      } else if (_selectedSort == 'Newest') {
-                        sortedData.sort((a, b) =>
-                            _newestValue(b).compareTo(_newestValue(a)));
-                      }
+                      // Keep the scholarships cache in sync with the stream;
+                      // _applyFiltersAndSort uses the cached list so the filter
+                      // pass doesn't re-run every time the user types or taps a
+                      // chip that doesn't change the filter signature.
+                      _scholarshipsFor(allData);
+                      final sortedData = _applyFiltersAndSort();
 
                       if (sortedData.isEmpty) {
                         listContent = ScholarshipState(
@@ -536,7 +612,7 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
                                 _buildFilterButton(
                                   'Country',
                                   _selectedCountry,
-                                  countryOptions,
+                                  _countryOptions(allData),
                                   (value) =>
                                       setState(() => _selectedCountry = value),
                                 ),
@@ -544,7 +620,7 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
                                 _buildFilterButton(
                                   'Degree',
                                   _selectedDegree,
-                                  degreeOptions,
+                                  _degreeOptions(allData),
                                   (value) =>
                                       setState(() => _selectedDegree = value),
                                 ),
@@ -552,7 +628,7 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
                                 _buildFilterButton(
                                   'Funding',
                                   _selectedFunding,
-                                  fundingOptions,
+                                  _fundingOptions(allData),
                                   (value) =>
                                       setState(() => _selectedFunding = value),
                                 ),
@@ -561,17 +637,25 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
                                     'Deadline',
                                     _selectedDeadline,
                                     const [
-                                      'Next 30 days',
-                                      'Next 90 days',
-                                      'Open'
+                                      'Deadline Ascending',
+                                      'Deadline Descending',
                                     ],
-                                    (value) => setState(
-                                        () => _selectedDeadline = value)),
+                                    (value) => setState(() {
+                                      if (value == 'Deadline Ascending') {
+                                        _selectedDeadline = '';
+                                        _selectedSort = 'Deadline: Ascending';
+                                      } else if (value == 'Deadline Descending') {
+                                        _selectedDeadline = '';
+                                        _selectedSort = 'Deadline: Descending';
+                                      } else {
+                                        _selectedDeadline = value;
+                                      }
+                                    })),
                                 const SizedBox(width: 10),
                                 _buildFilterButton(
                                     'Field',
                                     _selectedField,
-                                    fieldOptions,
+                                    _fieldOptions(allData),
                                     (value) =>
                                         setState(() => _selectedField = value)),
                                 const SizedBox(width: 10),
@@ -581,6 +665,8 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
                                     sortOptions,
                                     (value) =>
                                         setState(() => _selectedSort = value)),
+                                const SizedBox(width: 10),
+                                _buildPremiumFiltersChip(),
                               ],
                             ),
                           ),
@@ -862,6 +948,46 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
         ),
       );
 
+  /// Pill that opens the upgrade dialog when a free user taps it.
+  ///
+  /// Premium filters are intentionally gated behind a single CTA rather than
+  /// re-skinned inline chips so the existing filter row stays untouched for
+  /// paying users.
+  Widget _buildPremiumFiltersChip() => Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(22),
+        onTap: () => PremiumGuard.promptUpgrade(
+          context,
+          feature: PremiumFeature.premiumFilters,
+        ),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF0F172A), Color(0xFF1E3A8A)],
+            ),
+            borderRadius: BorderRadius.circular(22),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.tune, size: 16, color: Colors.amber),
+              SizedBox(width: 6),
+              Text(
+                'Pro Filters',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
   Widget _buildScholarshipCard(Map<String, dynamic> s) {
     final status = _getStatusBadge(s);
     final statusColor = _getStatusColor(status);
@@ -1109,50 +1235,14 @@ class _ScholarshipsScreenState extends State<ScholarshipsScreen> {
       return;
     }
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(
-        child: CircularProgressIndicator(color: Color(0xFF5B7AE8)),
+    // The list already has the full scholarship data, so skip the extra
+    // Firestore round-trip and push the details screen immediately. The
+    // details screen still uses Firestore snapshots to stay up to date.
+    Navigator.push(
+      context,
+      _fastPageRoute(
+        ScholarshipDetailsScreen(data: fallbackData),
       ),
     );
-
-    try {
-      final doc = await FirebaseFirestore.instance
-          .collection('scholarships')
-          .doc(scholarshipId)
-          .get();
-
-      if (!context.mounted) return;
-      Navigator.of(context).pop();
-
-      if (!doc.exists) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Scholarship not found')),
-        );
-        return;
-      }
-
-      final data = doc.data() ?? {};
-      data['id'] = scholarshipId;
-
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ScholarshipDetailsScreen(
-            data: {
-              ...fallbackData,
-              ...data,
-            },
-          ),
-        ),
-      );
-    } catch (_) {
-      if (!context.mounted) return;
-      Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to load scholarship')),
-      );
-    }
   }
 }

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../profile/profile_widgets.dart';
-import '../scholarship/scholarship_details.dart';
+import 'application_details.dart';
 
 class MyApplicationsScreen extends StatelessWidget {
   const MyApplicationsScreen({super.key, this.onMenuTap});
@@ -85,11 +85,21 @@ class MyApplicationsScreen extends StatelessWidget {
                     final data = docs[index].data();
                     final scholarshipId =
                         (data['scholarshipId'] ?? docs[index].id).toString();
-                    final title = (data['title'] ?? 'Scholarship').toString();
+                    final title = (data['scholarshipTitle'] ??
+                            data['title'] ??
+                            'Scholarship')
+                        .toString();
                     final country = (data['country'] ?? '').toString();
                     final degree = (data['degree'] ?? '').toString();
-                    final status = (data['status'] ?? 'Pending').toString();
-                    final appliedDate = _formatDate(data['appliedAt']);
+                    final rawStatus = (data['status'] ?? 'Pending').toString();
+                    final status = rawStatus.toLowerCase() == 'applied' &&
+                            data['adminAppliedAt'] != null
+                        ? 'In Process'
+                        : rawStatus.toLowerCase() == 'applied'
+                            ? 'Pending'
+                            : rawStatus;
+                    final appliedDate =
+                        _formatDate(data['submittedAt'] ?? data['appliedAt']);
                     final imageUrl = (data['image'] ?? '').toString();
 
                     return _buildApplicationCard(
@@ -101,7 +111,12 @@ class MyApplicationsScreen extends StatelessWidget {
                       status: status,
                       appliedDate: appliedDate,
                       onViewDetails: () {
-                        _openScholarshipDetails(context, scholarshipId, data);
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  ApplicationDetailsScreen(application: data),
+                            ));
                       },
                     );
                   },
@@ -320,72 +335,16 @@ class MyApplicationsScreen extends StatelessWidget {
         child: const Icon(Icons.school_outlined, color: sbPrimary, size: 30),
       );
 
-  Future<void> _openScholarshipDetails(
-    BuildContext context,
-    String scholarshipId,
-    Map<String, dynamic> fallbackData,
-  ) async {
-    if (scholarshipId.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Missing scholarship id')),
-      );
-      return;
-    }
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(
-        child: CircularProgressIndicator(color: sbPrimary),
-      ),
-    );
-
-    try {
-      final doc = await FirebaseFirestore.instance
-          .collection('scholarships')
-          .doc(scholarshipId)
-          .get();
-
-      if (!context.mounted) return;
-      Navigator.of(context).pop();
-
-      if (!doc.exists) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Scholarship not found')),
-        );
-        return;
-      }
-
-      final data = doc.data() ?? {};
-      data['id'] = scholarshipId;
-
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ScholarshipDetailsScreen(
-            data: {
-              ...fallbackData,
-              ...data,
-            },
-            readOnly: true,
-          ),
-        ),
-      );
-    } catch (_) {
-      if (!context.mounted) return;
-      Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to load scholarship')),
-      );
-    }
-  }
-
   Color _statusColor(String status) {
     switch (status.toLowerCase()) {
       case 'approved':
+      case 'accepted':
         return sbPrimaryDark;
       case 'rejected':
         return Colors.red.shade600;
+      case 'under review':
+      case 'in process':
+        return Colors.orange.shade700;
       case 'pending':
         return sbPrimary;
       default:

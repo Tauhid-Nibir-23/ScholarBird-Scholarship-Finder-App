@@ -1,5 +1,11 @@
+/// Shared profile UI primitives used across profile-related screens.
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
+import '../../widgets/premium_feature.dart';
+import '../../widgets/premium_guard.dart';
+
+/// Color and spacing tokens shared by profile-related widgets.
 const Color sbPrimary = Color(0xFF5B7AE8);
 const Color sbPrimaryDark = Color(0xFF3D5AC1);
 const Color sbBackground = Color(0xFFF5F7FB);
@@ -9,6 +15,7 @@ const Color sbMutedText = Color(0xFF9CA3AF);
 const Color sbBorder = Color(0xFFE5E7EB);
 const Color sbHintText = Color(0xFFB4BAC4);
 
+/// Section label used to divide profile settings groups.
 class ProfileSectionLabel extends StatelessWidget {
   const ProfileSectionLabel(this.text, {super.key});
 
@@ -22,10 +29,12 @@ class ProfileSectionLabel extends StatelessWidget {
           fontWeight: FontWeight.w600,
           color: sbMutedText,
           letterSpacing: 0.5,
+          height: 1.2,
         ),
       );
 }
 
+/// Tappable profile menu row with icon, title, and optional subtitle.
 class ProfileMenuTile extends StatelessWidget {
   const ProfileMenuTile({
     required this.icon,
@@ -94,6 +103,7 @@ class ProfileMenuTile extends StatelessWidget {
       );
 }
 
+/// Text field styling used by profile forms.
 class ProfileTextField extends StatelessWidget {
   const ProfileTextField({
     required this.controller,
@@ -101,6 +111,7 @@ class ProfileTextField extends StatelessWidget {
     required this.prefixIcon,
     this.keyboardType,
     this.maxLines = 1,
+    this.inputFormatters,
     super.key,
   });
 
@@ -109,12 +120,19 @@ class ProfileTextField extends StatelessWidget {
   final IconData prefixIcon;
   final TextInputType? keyboardType;
   final int maxLines;
+  final List<TextInputFormatter>? inputFormatters;
 
   @override
   Widget build(BuildContext context) => TextField(
         controller: controller,
         keyboardType: keyboardType,
         maxLines: maxLines,
+        inputFormatters: inputFormatters,
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          color: sbText,
+        ),
         decoration: InputDecoration(
           hintText: hintText,
           hintStyle: const TextStyle(
@@ -147,6 +165,7 @@ class ProfileTextField extends StatelessWidget {
       );
 }
 
+/// Dropdown field styling used by profile forms.
 class ProfileDropdownField extends StatelessWidget {
   const ProfileDropdownField({
     required this.label,
@@ -155,6 +174,7 @@ class ProfileDropdownField extends StatelessWidget {
     required this.prefixIcon,
     this.value,
     this.hint = '',
+    this.showLabel = true,
     super.key,
   });
 
@@ -165,20 +185,26 @@ class ProfileDropdownField extends StatelessWidget {
   final IconData prefixIcon;
   final Function(String?) onChanged;
 
+  /// When false, the [label] text above the field is suppressed so the
+  /// dropdown can sit directly under a section header without duplication.
+  final bool showLabel;
+
   @override
   Widget build(BuildContext context) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: sbText,
-              letterSpacing: 0.2,
+          if (showLabel)
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: sbMutedText,
+                letterSpacing: 0.5,
+                height: 1.2,
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
+          if (showLabel) const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
@@ -186,6 +212,11 @@ class ProfileDropdownField extends StatelessWidget {
             ),
             child: DropdownButtonFormField<String>(
               initialValue: value,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: sbText,
+              ),
               decoration: InputDecoration(
                 hintText: hint,
                 hintStyle: const TextStyle(
@@ -238,6 +269,7 @@ class ProfileDropdownField extends StatelessWidget {
       );
 }
 
+/// Primary button styling used by profile actions.
 class ProfilePrimaryButton extends StatelessWidget {
   const ProfilePrimaryButton({
     required this.title,
@@ -283,6 +315,7 @@ class ProfilePrimaryButton extends StatelessWidget {
       );
 }
 
+/// Empty or error state shown inside profile-related views.
 class ProfileEmptyState extends StatelessWidget {
   const ProfileEmptyState({
     required this.title,
@@ -345,4 +378,68 @@ class ProfileEmptyState extends StatelessWidget {
           ),
         ),
       );
+}
+
+/// Verified ScholarBird Pro badge shown next to profile identifiers
+/// (e.g. the user's display name or settings header).
+///
+/// Free users see nothing (the widget returns `SizedBox.shrink()` thanks
+/// to the locked builder override). Premium users see a gradient pill
+/// that, when tapped, opens the upgrade dialog re-prompting them to
+/// keep their subscription active.
+class PremiumBadge extends StatelessWidget {
+  const PremiumBadge({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return PremiumGuard(
+      feature: PremiumFeature.premiumBadge,
+      lockedBuilder: (_) => const SizedBox.shrink(),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => PremiumGuard.promptUpgrade(
+          context,
+          feature: PremiumFeature.premiumBadge,
+        ),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF0F172A), Color(0xFF1E3A8A)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF0F172A).withValues(alpha: 0.25),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.workspace_premium,
+                size: 14,
+                color: Colors.amber,
+              ),
+              SizedBox(width: 4),
+              Text(
+                'PRO',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: 0.6,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

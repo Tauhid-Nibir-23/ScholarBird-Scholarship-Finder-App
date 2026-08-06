@@ -1,8 +1,11 @@
+/// In-app web payment gateway used to complete subscription purchases.
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
+/// Maps gateway callback URLs to a typed result for the upgrade flow.
 enum GatewayPaymentResult { success, failed, cancelled }
 
+/// Presents the SSLCommerz checkout flow inside a WebView.
 class PaymentGatewayScreen extends StatefulWidget {
   const PaymentGatewayScreen({required this.gatewayUrl, super.key});
 

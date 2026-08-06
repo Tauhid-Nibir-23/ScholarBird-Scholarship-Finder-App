@@ -1,8 +1,11 @@
+/// Sign-up screen that creates user accounts and stores profile metadata.
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'login_screen.dart';
+import 'email_verification_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// Collects account, department, and degree information for new users.
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
 
@@ -330,8 +333,28 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
       print('✅ Profile updated with name: $name');
 
+      // Send verification email immediately after account creation so the
+      // user can verify before logging in. If sending fails (for example
+      // because of a network outage) we still let them reach the
+      // verification screen where they can retry from there.
+      try {
+        await FirebaseAuth.instance.currentUser?.sendEmailVerification();
+        print('✅ Verification email sent');
+      } catch (verifyError) {
+        print('⚠️ Could not send verification email: $verifyError');
+      }
+
       if (mounted) {
-        _showSuccessDialog('Account created successfully! Please log in.');
+        // Replace the signup screen with the verification screen so the
+        // user cannot accidentally navigate "back" into a half-completed
+        // form after the account has been created.
+        Navigator.of(context).pushReplacementNamed(
+          '/verify-email',
+          arguments: EmailVerificationScreenArgs(
+            email: email,
+            reason: EmailVerificationReason.justSignedUp,
+          ),
+        );
       }
     } catch (e) {
       print('❌ Error: ${e.toString()}');
@@ -380,25 +403,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showSuccessDialog(String message) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Success'),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              Navigator.of(context).pushReplacementNamed('/login');
-            },
             child: const Text('OK'),
           ),
         ],

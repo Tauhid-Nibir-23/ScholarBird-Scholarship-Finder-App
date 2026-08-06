@@ -1,7 +1,9 @@
+/// Empty state shown when the user has no saved scholarships.
 import 'package:flutter/material.dart';
 
 import '../screens/profile/profile_widgets.dart';
 
+/// Provides the friendly saved-scholarships placeholder UI.
 class SavedEmptyState extends StatelessWidget {
   const SavedEmptyState({required this.onBrowse, super.key});
 

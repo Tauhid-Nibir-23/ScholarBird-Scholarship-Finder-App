@@ -8,6 +8,7 @@ import '../profile/saved_scholarships_screen.dart';
 import '../ai_advisor/ai_advisor_screen.dart';
 import '../premium/premium_upgrade_screen.dart';
 import '../../widgets/scholarbird_navigation_drawer.dart';
+import '../mentor/mentor_hub_screen.dart';
 import 'home_content.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -30,15 +31,8 @@ class _HomeScreenState extends State<HomeScreen> {
     _pageController = PageController();
     _screens = [
       HomeContent(
-        onExploreTap: () {
-          if (!mounted) return;
-          setState(() => _currentIndex = 1);
-          _pageController.animateToPage(
-            1,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-          );
-        },
+        onExploreTap: () => _goToTab(1),
+        onSavedTap: _openSaved,
       ),
       ScholarshipsScreen(onMenuTap: _openDrawer),
       AIAdvisorScreen(onMenuTap: _openDrawer),
@@ -60,9 +54,10 @@ class _HomeScreenState extends State<HomeScreen> {
         drawer: ScholarBirdNavigationDrawer(
           selectedIndex: _currentIndex,
           onTabSelected: _goToTab,
-          onSaved: () => _push(const SavedScholarshipsScreen()),
+          onSaved: _openSaved,
           onNotifications: () => _push(const NotificationsScreen()),
           onPremium: () => _push(const PremiumUpgradeScreen()),
+          onMentorHub: () => _push(const MentorHubScreen()),
           onLogout: _logout,
         ),
         appBar: _buildAppBar(),
@@ -140,6 +135,23 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _openDrawer() => _scaffoldKey.currentState?.openDrawer();
 
+  void _openSaved() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => Scaffold(
+          backgroundColor: const Color(0xFFF5F7FB),
+          body: SavedScholarshipsScreen(
+            onMenuTap: _openDrawer,
+            onExplore: () {
+              Navigator.of(context).pop();
+              _goToTab(1);
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
   void _push(Widget screen) =>
       Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
 
@@ -189,6 +201,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text(
                   'ScholarBird',
                   style: TextStyle(
+                    fontFamily: 'Roboto',
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF1A1A2E),
@@ -199,16 +212,10 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const NotificationsScreen(),
-                ),
-              );
-            },
-            icon: const Icon(Icons.notifications_none_outlined),
-            color: const Color(0xFF1A1A2E),
+          UnreadNotificationBell(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+            ),
           ),
         ],
       );

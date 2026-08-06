@@ -1,5 +1,7 @@
+/// Firestore-backed scholarship record used throughout the app.
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// Normalized scholarship data mapped from Firestore documents.
 class Scholarship {
   const Scholarship({
     required this.id,
@@ -12,6 +14,7 @@ class Scholarship {
     required this.fundingType,
   });
 
+  /// Creates a scholarship model from a Firestore document snapshot.
   factory Scholarship.fromFirestore(
       DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? <String, dynamic>{};
@@ -40,6 +43,7 @@ class Scholarship {
   final String eligibility;
   final String fundingType;
 
+  /// Serializes the model into the structure expected by Gemini.
   Map<String, dynamic> toGeminiMap() => {
         'title': title,
         'country': country,

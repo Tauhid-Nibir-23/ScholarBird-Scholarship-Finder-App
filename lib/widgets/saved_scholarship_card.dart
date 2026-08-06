@@ -1,9 +1,41 @@
+/// Card used to display a saved scholarship entry and its actions.
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../screens/profile/profile_widgets.dart';
 import 'saved_scholarship_controls.dart';
 
+/// Returns the best available image URL across the saved snapshot and
+/// its parent scholarship document, or `null` when none is usable.
+///
+/// Precedence (highest first):
+///   1. `image` on the parent scholarship document (authoritative
+///      latest source — matches the canonical backend contract).
+///   2. `imageUrl` on the parent scholarship document (legacy alias
+///      used by older admin writes).
+///   3. `image` on the saved snapshot (what was captured at save
+///      time).
+///   4. `imageUrl` on the saved snapshot (legacy alias).
+///
+/// Whitespace-only values are treated as missing. The helper never
+/// returns an empty string, so callers can render the placeholder
+/// safely without a second guard.
+String? _resolveSavedImageUrl(Map<String, dynamic> data) {
+  String? pick(List<String> keys) {
+    for (final key in keys) {
+      final raw = data[key];
+      if (raw == null) continue;
+      final trimmed = raw.toString().trim();
+      if (trimmed.isNotEmpty) return trimmed;
+    }
+    return null;
+  }
+
+  return pick(const ['parentImage', 'parentImageUrl']) ??
+      pick(const ['image', 'imageUrl']);
+}
+
+/// Renders scholarship details with the save and view actions.
 class SavedScholarshipCard extends StatelessWidget {
   const SavedScholarshipCard({
     required this.data,
@@ -26,7 +58,7 @@ class SavedScholarshipCard extends StatelessWidget {
     final country = (data['country'] ?? '').toString();
     final degree = (data['degree'] ?? '').toString();
     final savedAt = data['savedAt'];
-    final imageUrl = (data['imageUrl'] ?? data['image'] ?? '').toString();
+    final imageUrl = _resolveSavedImageUrl(data);
 
     return Material(
       color: Colors.white,
@@ -52,19 +84,34 @@ class SavedScholarshipCard extends StatelessWidget {
                   child: SizedBox(
                     width: 80,
                     height: 80,
-                    child: imageUrl.isEmpty
+                    child: imageUrl == null
                         ? Container(
-                            color: sbPrimary.withValues(alpha: 0.08),
-                            child: const Icon(Icons.school_outlined,
-                                color: sbPrimary),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              gradient: const LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Color(0xFFE8EDFF),
+                                  Color(0xFFF4F6FF),
+                                ],
+                              ),
+                            ),
+                            alignment: Alignment.center,
+                            child: const Icon(Icons.image_outlined,
+                                color: sbPrimary, size: 28),
                           )
                         : Image.network(
                             imageUrl,
                             fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) => Container(
-                              color: sbPrimary.withValues(alpha: 0.08),
-                              child: const Icon(Icons.school_outlined,
-                                  color: sbPrimary),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                color: sbPrimary.withValues(alpha: 0.08),
+                              ),
+                              alignment: Alignment.center,
+                              child: const Icon(Icons.image_outlined,
+                                  color: sbPrimary, size: 28),
                             ),
                           ),
                   ),

@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../services/profile_image_service.dart';
 import 'profile_widgets.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -11,10 +14,12 @@ class EditProfileScreen extends StatefulWidget {
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
-  final _photoUrlController = TextEditingController();
+  String? _profileImageUrl;
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _nationalityController = TextEditingController();
+  final _dateOfBirthController = TextEditingController();
+  final _genderController = TextEditingController();
   final _countryController = TextEditingController();
   final _universityController = TextEditingController();
   final _departmentController = TextEditingController();
@@ -103,26 +108,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     'PhD',
   ];
 
+  StreamSubscription<String?>? _profileImageSub;
+
   @override
   void initState() {
     super.initState();
-    _photoUrlController.addListener(_handlePhotoUrlChanged);
+    _profileImageSub =
+        ProfileImageService.instance.streamProfileImage().listen((url) {
+      if (mounted) {
+        setState(() => _profileImageUrl = url);
+      }
+    });
     _loadProfile();
-  }
-
-  void _handlePhotoUrlChanged() {
-    if (mounted) {
-      setState(() {});
-    }
   }
 
   @override
   void dispose() {
-    _photoUrlController.removeListener(_handlePhotoUrlChanged);
-    _photoUrlController.dispose();
+    _profileImageSub?.cancel();
     _nameController.dispose();
     _phoneController.dispose();
     _nationalityController.dispose();
+    _dateOfBirthController.dispose();
+    _genderController.dispose();
     _countryController.dispose();
     _universityController.dispose();
     _departmentController.dispose();
@@ -145,18 +152,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
       final data = snapshot.data();
       if (data != null) {
-        _photoUrlController.text =
-            (data['photoUrl'] ?? currentUser.photoURL ?? '').toString();
         _nameController.text =
             (data['name'] ?? currentUser.displayName ?? '').toString();
         _phoneController.text = (data['phone'] ?? '').toString();
         _nationalityController.text = (data['nationality'] ?? '').toString();
+        _dateOfBirthController.text = (data['dateOfBirth'] ?? '').toString();
+        _genderController.text = (data['gender'] ?? '').toString();
         _countryController.text = (data['country'] ?? '').toString();
         _universityController.text = (data['university'] ?? '').toString();
         _departmentController.text = (data['department'] ?? '').toString();
         _degreeController.text = (data['degree'] ?? '').toString();
       } else {
-        _photoUrlController.text = currentUser.photoURL ?? '';
         _nameController.text = currentUser.displayName ?? '';
       }
     } catch (e) {
@@ -189,10 +195,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           .collection('users')
           .doc(currentUser.uid)
           .set({
-        'photoUrl': _photoUrlController.text.trim(),
         'name': name,
         'phone': _phoneController.text.trim(),
         'nationality': _nationalityController.text.trim(),
+        'dateOfBirth': _dateOfBirthController.text.trim(),
+        'gender': _genderController.text.trim(),
+        'currentEducation': _degreeController.text.trim(),
         'country': _countryController.text.trim(),
         'university': _universityController.text.trim(),
         'department': _departmentController.text.trim(),
@@ -203,7 +211,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       }, SetOptions(merge: true));
 
       await currentUser.updateDisplayName(name);
-      await currentUser.updatePhotoURL(_photoUrlController.text.trim());
 
       if (mounted) {
         _showMessage('Profile updated successfully.');
@@ -431,21 +438,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       CircleAvatar(
                         radius: 50,
                         backgroundColor: Colors.white,
-                        backgroundImage:
-                            _photoUrlController.text.trim().startsWith('http')
-                                ? NetworkImage(_photoUrlController.text.trim())
-                                : null,
-                        child: _photoUrlController.text.trim().isEmpty
+                        backgroundImage: (_profileImageUrl != null &&
+                                _profileImageUrl!.startsWith('http'))
+                            ? NetworkImage(_profileImageUrl!)
+                            : null,
+                        child: (_profileImageUrl == null ||
+                                _profileImageUrl!.isEmpty)
                             ? const Icon(Icons.person,
                                 size: 50, color: sbMutedText)
                             : null,
-                      ),
-                      const SizedBox(height: 16),
-                      ProfileTextField(
-                        controller: _photoUrlController,
-                        hintText: 'Profile Picture URL',
-                        prefixIcon: Icons.image_outlined,
-                        keyboardType: TextInputType.url,
                       ),
                       const SizedBox(height: 16),
                       ProfileTextField(
@@ -465,6 +466,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         controller: _nationalityController,
                         hintText: 'Nationality',
                         prefixIcon: Icons.flag_outlined,
+                      ),
+                      const SizedBox(height: 16),
+                      ProfileTextField(
+                        controller: _dateOfBirthController,
+                        hintText: 'Date of Birth',
+                        prefixIcon: Icons.cake_outlined,
+                      ),
+                      const SizedBox(height: 16),
+                      ProfileTextField(
+                        controller: _genderController,
+                        hintText: 'Gender',
+                        prefixIcon: Icons.person_outline,
                       ),
                       const SizedBox(height: 16),
                       _buildSelectField(

@@ -1,12 +1,12 @@
+/// Navigation drawer that routes between the main end-user screens.
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../models/subscription_model.dart';
-import '../services/subscription_service.dart';
 import '../theme/scholarbird_theme.dart';
+import 'premium_guard.dart';
 
-/// The shared app drawer. It reads existing user/subscription documents only.
+/// Displays account-aware navigation options and logout actions.
 class ScholarBirdNavigationDrawer extends StatelessWidget {
   const ScholarBirdNavigationDrawer({
     required this.selectedIndex,
@@ -14,6 +14,7 @@ class ScholarBirdNavigationDrawer extends StatelessWidget {
     required this.onSaved,
     required this.onNotifications,
     required this.onPremium,
+    required this.onMentorHub,
     required this.onLogout,
     super.key,
   });
@@ -23,6 +24,7 @@ class ScholarBirdNavigationDrawer extends StatelessWidget {
   final VoidCallback onSaved;
   final VoidCallback onNotifications;
   final VoidCallback onPremium;
+  final VoidCallback onMentorHub;
   final VoidCallback onLogout;
 
   @override
@@ -51,8 +53,8 @@ class ScholarBirdNavigationDrawer extends StatelessWidget {
           _destination(Icons.assignment_outlined, 'My Applications'),
           _action(context, Icons.notifications_none_outlined, 'Notifications',
               onNotifications),
-          _action(
-              context, Icons.workspace_premium_outlined, 'Premium', onPremium),
+          _action(context, Icons.workspace_premium_outlined, 'Premium', onPremium),
+          _action(context, Icons.school_outlined, 'Mentor Hub', onMentorHub),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 28, vertical: 10),
             child: Divider(height: 1),
@@ -124,11 +126,15 @@ class _DrawerProfileHeader extends StatelessWidget {
         final photo =
             (data['photoUrl'] ?? data['profileImage'] ?? user.photoURL ?? '')
                 .toString();
-        return StreamBuilder<SubscriptionModel>(
-          stream: SubscriptionService().watch(),
-          builder: (context, subscriptionSnapshot) {
-            final subscription = subscriptionSnapshot.data ??
-                const SubscriptionModel(status: 'free');
+        // Read the local-demo + Firestore-backed subscription state from the
+        // app-wide [SubscriptionProviderScope] so that an in-app activation
+        // (e.g. via the local demo path) is reflected here immediately,
+        // instead of waiting for Firestore to catch up.
+        return ListenableBuilder(
+          listenable: SubscriptionProviderScope.of(context),
+          builder: (context, _) {
+            final provider = SubscriptionProviderScope.of(context);
+            final subscription = provider.subscription;
             return Container(
               margin: const EdgeInsets.fromLTRB(12, 12, 12, 8),
               padding: const EdgeInsets.all(16),

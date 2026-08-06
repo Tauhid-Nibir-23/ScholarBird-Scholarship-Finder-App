@@ -1,38 +1,11 @@
-class ScholarshipRecommendation {
-  const ScholarshipRecommendation({
-    required this.scholarshipName,
-    required this.matchProbability,
-    required this.reason,
-    this.country = '',
-    this.scholarshipId = '',
-    this.scholarshipData,
-  });
+/// Compatibility facade for the legacy import path.
+///
+/// The recommendation model has been moved into the AI Hub package. Existing
+/// imports (`import '../models/scholarship_recommendation.dart';`) continue
+/// to work without changes by re-exporting the canonical model.
+export '../ai_hub/models/scholarship_recommendation.dart';
 
-  factory ScholarshipRecommendation.fromJson(Map<String, dynamic> json) =>
-      ScholarshipRecommendation(
-        scholarshipName: (json['scholarshipName'] ?? '').toString().trim(),
-        matchProbability: (json['matchProbability'] ?? '').toString().trim(),
-        reason: (json['reason'] ?? '').toString().trim(),
-      );
-
-  final String scholarshipName;
-  final String matchProbability;
-  final String reason;
-  final String country;
-  final String scholarshipId;
-  final Map<String, dynamic>? scholarshipData;
-
-  ScholarshipRecommendation withScholarship({
-    required String country,
-    required String scholarshipId,
-    Map<String, dynamic>? scholarshipData,
-  }) =>
-      ScholarshipRecommendation(
-        scholarshipName: scholarshipName,
-        matchProbability: matchProbability,
-        reason: reason,
-        country: country,
-        scholarshipId: scholarshipId,
-        scholarshipData: scholarshipData,
-      );
-}
+// The legacy ScholarshipRecommendation model has been moved into the
+// AI Hub package. The export at the top of this file re-exports the
+// canonical model, so all existing call sites continue to work without
+// any changes to their imports.

@@ -1,6 +1,7 @@
+/// User profile document used for recommendations and profile screens.
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-/// The fields Gemini needs to make a scholarship recommendation.
+/// Captures academic background and preference data from Firestore.
 class UserProfile {
   const UserProfile({
     required this.degree,
@@ -11,6 +12,7 @@ class UserProfile {
     required this.academicBackground,
   });
 
+  /// Creates a user profile model from a Firestore document snapshot.
   factory UserProfile.fromFirestore(
       DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? <String, dynamic>{};
@@ -39,6 +41,7 @@ class UserProfile {
   final List<String> preferredStudyCountries;
   final String academicBackground;
 
+  /// Indicates whether the profile has enough data for recommendations.
   bool get hasEnoughInformation =>
       degree.isNotEmpty ||
       cgpa != null ||

@@ -30,10 +30,10 @@ try:  # The engine is a pure-additive dependency; legacy paths still work.
 except Exception:  # pragma: no cover - defensive import guard
     extract_fields_from_html = None  # type: ignore[assignment]
 
-try:  # Provider plugins are additive and optional, like generic extraction.
-    from backend.parser.providers import detect_provider
+try:  # The robust extractor is a pure-additive dependency; legacy paths still work.
+    from backend.parser.extractors import extract_robust_images
 except Exception:  # pragma: no cover - defensive import guard
-    detect_provider = None  # type: ignore[assignment]
+    extract_robust_images = None  # type: ignore[assignment]
 
 _IMAGE_META = re.compile(r'<meta[^>]+(?:property|name)=["\'](?:og:image|twitter:image)["\'][^>]+content=["\']([^"\']+)', re.I)
 _IELTS = re.compile(r'\bIELTS\b[^0-9]{0,24}(\d(?:\.\d)?)', re.I)
@@ -97,51 +97,8 @@ class ScholarshipEnricher:
         degree = record.degree
         country = record.country
         title = record.title
-        deadline = record.deadline
-        tags = list(record.tags)
-        eligibility = record.eligibility
         cgpa_scale = record.cgpa_scale
         fully_funded = record.fully_funded
-
-        # Source-specific extraction has first priority but remains strictly
-        # additive: it can only fill model slots the source scraper left
-        # empty. The generic engine below remains the universal fallback.
-        if detect_provider is not None:
-            try:
-                provider = detect_provider(
-                    source=record.source,
-                    url=url,
-                    official_id=record.official_id,
-                )
-                if provider is not None:
-                    provider_values = provider.extract(html, url)
-                    if not description or description.strip() in {"", "Unknown"}:
-                        description = provider_values.description or description
-                    if not university:
-                        university = provider_values.university or university
-                    if not field_value or field_value.strip() in {"", "Unknown"}:
-                        field_value = provider_values.field or field_value
-                    if not degree or degree.strip() in {"", "Unknown"}:
-                        degree = provider_values.degree or degree
-                    if not title or title.strip() in {"", "Unknown"}:
-                        title = provider_values.title or title
-                    if not deadline or deadline.strip() in {"", "Unknown"}:
-                        deadline = provider_values.deadline or deadline
-                    if not funding or funding == "Unknown":
-                        funding = provider_values.funding or funding
-                    if not image:
-                        image = provider_values.image or image
-                    if eligibility is None or not eligibility.strip():
-                        eligibility = provider_values.eligibility or eligibility
-                    for tag in provider_values.tags + provider_values.benefits:
-                        if tag and tag not in tags:
-                            tags.append(tag)
-                    if provider_values.ielts_required is True and not ielts_required:
-                        ielts_required = True
-                    if english_medium is None and provider_values.english_medium_accepted is not None:
-                        english_medium = provider_values.english_medium_accepted
-            except Exception as exc:  # noqa: BLE001 - plugin isolation
-                _logger.debug("Provider extraction failed for %s: %s", record.source, exc)
         if extract_fields_from_html is not None:
             try:
                 existing_payload: Dict[str, Any] = {
@@ -258,6 +215,34 @@ class ScholarshipEnricher:
                 )
                 self.last_engine_debug = None
 
+        # ------------------------------------------------------------------
+        # Robust image fallback (additive layer)
+        # ------------------------------------------------------------------
+        # Runs only when the legacy regex, the modern engine, and any
+        # scraper-supplied value have all left ``image`` empty. The robust
+        # extractor understands ``<picture>``/``<source srcset>``,
+        # ``img[srcset]``, and the expanded hero/featured class
+        # whitelist. It never overwrites a non-empty ``image`` value.
+        if not image and extract_robust_images is not None and html:
+            try:
+                from bs4 import BeautifulSoup as _BS4  # local import: optional
+
+                robust_soup = _BS4(html, "html.parser")
+                robust_result = extract_robust_images(
+                    robust_soup,
+                    page_url=url,
+                    fetcher=self._client,
+                    validate=False,
+                )
+                if robust_result.best:
+                    image = robust_result.best
+            except Exception as exc:  # noqa: BLE001 - defensive
+                _logger.debug(
+                    "Robust image extractor failed for %s: %s",
+                    getattr(record, "title", "?"),
+                    exc,
+                )
+
         return replace(
             record,
             title=title,
@@ -265,7 +250,6 @@ class ScholarshipEnricher:
             country=country,
             degree=degree,
             field=field_value,
-            deadline=deadline,
             amount=funding,
             image=image,
             min_cgpa=cgpa,
@@ -276,8 +260,6 @@ class ScholarshipEnricher:
             research_required=research,
             fully_funded=fully_funded,
             university=university,
-            tags=tags,
-            eligibility=eligibility,
         )
 
     def _fetch(self, url: str) -> str:

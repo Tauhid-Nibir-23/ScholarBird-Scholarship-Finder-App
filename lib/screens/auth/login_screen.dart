@@ -1,8 +1,11 @@
+/// Login screen that authenticates users and routes them into the app.
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/role_navigation.dart';
 import 'signup_screen.dart';
+import 'email_verification_screen.dart';
 
+/// Handles email/password and Google sign-in entry points.
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -433,12 +436,43 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       print('🔑 Attempting to log in with email: $email');
 
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      print('✅ Login successful, navigating to home');
+      print('✅ Login successful, checking email verification');
+
+      // Reload the user so we read the latest emailVerified flag from Firebase
+      // (the value on the in-memory credential can be stale right after
+      // sign-in).
+      try {
+        await credential.user?.reload();
+      } catch (reloadError) {
+        print('⚠️ Could not reload user after login: $reloadError');
+      }
+
+      final currentUser = FirebaseAuth.instance.currentUser;
+      final isVerified = currentUser?.emailVerified ?? false;
+
+      if (!isVerified) {
+        print('🚫 Email not verified, redirecting to verification screen');
+        // Keep the user signed out so the verification screen can resend
+        // the verification email on demand without re-authentication.
+        await FirebaseAuth.instance.signOut();
+        if (mounted) {
+          Navigator.of(context).pushReplacementNamed(
+            '/verify-email',
+            arguments: EmailVerificationScreenArgs(
+              email: email,
+              reason: EmailVerificationReason.unverifiedLogin,
+            ),
+          );
+        }
+        return;
+      }
+
+      print('✅ Email verified, navigating to home');
 
       final route = await RoleNavigation.routeForUser(
         FirebaseAuth.instance.currentUser!.uid,

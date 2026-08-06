@@ -1,3 +1,4 @@
+/// Home dashboard content showing promos, counts, and quick actions.
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -7,15 +8,21 @@ import '../profile/saved_scholarships_screen.dart';
 import '../scholarship/scholarship_details.dart';
 import '../premium/manage_subscription_screen.dart';
 import '../premium/premium_upgrade_screen.dart';
-import '../../services/subscription_service.dart';
 import '../../widgets/premium_banner.dart';
+import '../../widgets/premium_guard.dart';
 import '../../services/pdf_service.dart';
 import '../../widgets/saved_scholarship_controls.dart';
 
+/// Renders the scrollable dashboard cards for the home screen.
 class HomeContent extends StatefulWidget {
-  const HomeContent({required this.onExploreTap, super.key});
+  const HomeContent({
+    required this.onExploreTap,
+    this.onSavedTap,
+    super.key,
+  });
 
   final VoidCallback onExploreTap;
+  final VoidCallback? onSavedTap;
 
   @override
   State<HomeContent> createState() => _HomeContentState();
@@ -54,7 +61,8 @@ class _HomeContentState extends State<HomeContent> {
                   Text(
                     'Welcome, ${_getUserName()}',
                     style: const TextStyle(
-                      fontSize: 22,
+                      fontFamily: 'Roboto',
+                      fontSize: 20,
                       fontWeight: FontWeight.w700,
                       color: Color(0xFF1A1A2E),
                     ),
@@ -63,6 +71,7 @@ class _HomeContentState extends State<HomeContent> {
                   const Text(
                     'Ready to continue your journey?',
                     style: TextStyle(
+                      fontFamily: 'Roboto',
                       fontSize: 14,
                       fontWeight: FontWeight.w400,
                       color: Color(0xFF6B7A95),
@@ -99,19 +108,21 @@ class _HomeContentState extends State<HomeContent> {
                       controller: _bannerController,
                       physics: const BouncingScrollPhysics(),
                       children: [
-                        StreamBuilder(
-                          stream: SubscriptionService().watch(),
-                          builder: (context, snapshot) {
-                            final subscription = snapshot.data;
-                            if (subscription == null) return const SizedBox();
+                        ListenableBuilder(
+                          listenable: SubscriptionProviderScope.of(context),
+                          builder: (context, _) {
+                            final subscription =
+                                SubscriptionProviderScope.of(context)
+                                    .subscription;
                             return PremiumBanner(
                               subscription: subscription,
-                              onTap: () =>
-                                  Navigator.of(context).push(MaterialPageRoute(
-                                builder: (_) => subscription.isPremium
-                                    ? const ManageSubscriptionScreen()
-                                    : const PremiumUpgradeScreen(),
-                              )),
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => subscription.isPremium
+                                      ? const ManageSubscriptionScreen()
+                                      : const PremiumUpgradeScreen(),
+                                ),
+                              ),
                             );
                           },
                         ),
@@ -179,6 +190,7 @@ class _HomeContentState extends State<HomeContent> {
                     const Text(
                       'Find new opportunities',
                       style: TextStyle(
+                        fontFamily: 'Roboto',
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
                         color: Colors.white,
@@ -190,14 +202,20 @@ class _HomeContentState extends State<HomeContent> {
                           .collection('scholarships')
                           .snapshots(),
                       builder: (context, snapshot) {
-                        final count = snapshot.data?.docs.length ?? 0;
+                        final count = (snapshot.data?.docs ?? const [])
+                            .where((doc) =>
+                                (doc.data()
+                                    as Map<String, dynamic>)['isHidden'] !=
+                                true)
+                            .length;
                         final label = count == 1
                             ? '1 scholarship matches your profile'
                             : '$count scholarships match your profile';
                         return Text(
                           label,
                           style: const TextStyle(
-                            fontSize: 13,
+                            fontFamily: 'Roboto',
+                            fontSize: 14,
                             fontWeight: FontWeight.w400,
                             color: Color(0xFFB4B9C8),
                           ),
@@ -220,6 +238,7 @@ class _HomeContentState extends State<HomeContent> {
                       child: const Text(
                         'Browse All',
                         style: TextStyle(
+                          fontFamily: 'Roboto',
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
@@ -258,10 +277,20 @@ class _HomeContentState extends State<HomeContent> {
                       label: 'Saved',
                       stream: _userCollectionStream('savedScholarships'),
                       onTap: () {
+                        // Prefer the host tab switch so the bottom nav and
+                        // drawer remain visible. Fall back to a push only if
+                        // the host did not provide the callback.
+                        if (widget.onSavedTap != null) {
+                          widget.onSavedTap!();
+                          return;
+                        }
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => const SavedScholarshipsScreen(),
+                            builder: (_) => Scaffold(
+                              backgroundColor: const Color(0xFFF5F7FB),
+                              body: const SavedScholarshipsScreen(),
+                            ),
                           ),
                         );
                       },
@@ -272,13 +301,14 @@ class _HomeContentState extends State<HomeContent> {
             ),
             // Trending Scholarships Section
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
                     'Trending Scholarships',
                     style: TextStyle(
+                      fontFamily: 'Roboto',
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: Color(0xFF1A1A2E),
@@ -289,6 +319,7 @@ class _HomeContentState extends State<HomeContent> {
                     child: const Text(
                       'See all',
                       style: TextStyle(
+                        fontFamily: 'Roboto',
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: Color(0xFF5B7AE8),
@@ -300,60 +331,67 @@ class _HomeContentState extends State<HomeContent> {
             ),
 
             // Scholarships Carousel
-            SizedBox(
-              // Each card includes a badge, image, save control, and deadline.
-              // Keep enough vertical room for the full card on compact screens.
-              height: 224,
-              child: StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('scholarships')
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  final allData = snapshot.data?.docs ?? [];
-                  if (snapshot.hasError) {
-                    return const Center(
-                        child: Text('Unable to load scholarships'));
-                  }
-                  if (snapshot.connectionState == ConnectionState.waiting &&
-                      allData.isEmpty) {
-                    return const Center(
-                      child:
-                          CircularProgressIndicator(color: Color(0xFF5B7AE8)),
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: SizedBox(
+                // Each card includes a badge, image, save control, and deadline.
+                // The height must accommodate two-line titles on compact screens.
+                height: 244,
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('scholarships')
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    final allData = (snapshot.data?.docs ?? [])
+                        .where((doc) =>
+                            (doc.data() as Map<String, dynamic>)['isHidden'] !=
+                            true)
+                        .toList();
+                    if (snapshot.hasError) {
+                      return const Center(
+                          child: Text('Unable to load scholarships'));
+                    }
+                    if (snapshot.connectionState == ConnectionState.waiting &&
+                        allData.isEmpty) {
+                      return const Center(
+                        child:
+                            CircularProgressIndicator(color: Color(0xFF5B7AE8)),
+                      );
+                    }
+                    if (allData.isEmpty) {
+                      return const Center(child: Text('No scholarships found'));
+                    }
+
+                    final items = allData
+                        .map((doc) => <String, dynamic>{
+                              ...doc.data()! as Map<String, dynamic>,
+                              'id': doc.id,
+                            })
+                        .where((s) => s.isNotEmpty)
+                        .toList();
+
+                    items.sort((a, b) {
+                      final aDate = _parseDeadline(a['deadline']);
+                      final bDate = _parseDeadline(b['deadline']);
+                      if (aDate == null && bDate == null) return 0;
+                      if (aDate == null) return 1;
+                      if (bDate == null) return -1;
+                      return aDate.compareTo(bDate);
+                    });
+
+                    final topThree = items.take(3).toList();
+                    return ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      itemBuilder: (context, index) => _buildScholarshipCard(
+                        context,
+                        topThree[index],
+                      ),
+                      separatorBuilder: (_, __) => const SizedBox(width: 12),
+                      itemCount: topThree.length,
                     );
-                  }
-                  if (allData.isEmpty) {
-                    return const Center(child: Text('No scholarships found'));
-                  }
-
-                  final items = allData
-                      .map((doc) => <String, dynamic>{
-                            ...doc.data()! as Map<String, dynamic>,
-                            'id': doc.id,
-                          })
-                      .where((s) => s.isNotEmpty)
-                      .toList();
-
-                  items.sort((a, b) {
-                    final aDate = _parseDeadline(a['deadline']);
-                    final bDate = _parseDeadline(b['deadline']);
-                    if (aDate == null && bDate == null) return 0;
-                    if (aDate == null) return 1;
-                    if (bDate == null) return -1;
-                    return aDate.compareTo(bDate);
-                  });
-
-                  final topThree = items.take(3).toList();
-                  return ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    itemBuilder: (context, index) => _buildScholarshipCard(
-                      context,
-                      topThree[index],
-                    ),
-                    separatorBuilder: (_, __) => const SizedBox(width: 12),
-                    itemCount: topThree.length,
-                  );
-                },
+                  },
+                ),
               ),
             ),
 
@@ -398,6 +436,7 @@ class _HomeContentState extends State<HomeContent> {
         ),
         padding: const EdgeInsets.all(12),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (badgeValue.isNotEmpty) ...[
@@ -410,7 +449,8 @@ class _HomeContentState extends State<HomeContent> {
                 child: Text(
                   badgeValue,
                   style: const TextStyle(
-                    fontSize: 10,
+                    fontFamily: 'Roboto',
+                    fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF5B7AE8),
                     letterSpacing: 0.3,
@@ -419,48 +459,53 @@ class _HomeContentState extends State<HomeContent> {
               ),
               const SizedBox(height: 8),
             ],
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: const Color(0xFF5B7AE8).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: imageUrl.isEmpty
-                    ? const Icon(
-                        Icons.school_outlined,
-                        color: Color(0xFF5B7AE8),
-                        size: 20,
-                      )
-                    : Image.network(
-                        imageUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                            const Icon(
-                          Icons.school_outlined,
-                          color: Color(0xFF5B7AE8),
-                          size: 20,
-                        ),
-                      ),
-              ),
-            ),
-            const SizedBox(height: 6),
-            Align(
-              alignment: Alignment.centerRight,
-              child: SavedScholarshipIconButton(
-                scholarship: s,
-                iconSize: 18,
-              ),
+            // Row keeps the scholarship image and the bookmark control on one line.
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF5B7AE8).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: imageUrl.isEmpty
+                        ? const Icon(
+                            Icons.school_outlined,
+                            color: Color(0xFF5B7AE8),
+                            size: 20,
+                          )
+                        : Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Icon(
+                              Icons.school_outlined,
+                              color: Color(0xFF5B7AE8),
+                              size: 20,
+                            ),
+                          ),
+                  ),
+                ),
+                const Spacer(),
+                SavedScholarshipIconButton(
+                  scholarship: s,
+                  iconSize: 18,
+                ),
+              ],
             ),
             const SizedBox(height: 8),
             Text(
               title.isEmpty ? 'Untitled scholarship' : title,
               style: const TextStyle(
-                fontSize: 13,
+                fontFamily: 'Roboto',
+                fontSize: 14,
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF1A1A2E),
+                height: 1.25,
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -469,20 +514,24 @@ class _HomeContentState extends State<HomeContent> {
             Text(
               location.isEmpty ? 'N/A' : location,
               style: const TextStyle(
-                fontSize: 11,
+                fontFamily: 'Roboto',
+                fontSize: 12,
                 fontWeight: FontWeight.w400,
                 color: Color(0xFF9CA3AF),
+                height: 1.2,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
               'Deadline: ${deadline.isEmpty ? 'N/A' : deadline}',
               style: const TextStyle(
-                fontSize: 10,
+                fontFamily: 'Roboto',
+                fontSize: 12,
                 fontWeight: FontWeight.w400,
                 color: Color(0xFF9CA3AF),
+                height: 1.2,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -555,6 +604,7 @@ class _HomeContentState extends State<HomeContent> {
                         Text(
                           label,
                           style: const TextStyle(
+                            fontFamily: 'Roboto',
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: Color(0xFF6B7A95),
@@ -564,7 +614,8 @@ class _HomeContentState extends State<HomeContent> {
                         Text(
                           count.toString(),
                           style: const TextStyle(
-                            fontSize: 18,
+                            fontFamily: 'Roboto',
+                            fontSize: 20,
                             fontWeight: FontWeight.w700,
                             color: Color(0xFF1A1A2E),
                           ),
@@ -632,6 +683,7 @@ class _HomeContentState extends State<HomeContent> {
                 Text(
                   title,
                   style: TextStyle(
+                    fontFamily: 'Roboto',
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                     color: titleColor,
@@ -643,6 +695,7 @@ class _HomeContentState extends State<HomeContent> {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
+                    fontFamily: 'Roboto',
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                     color: subtitleColor,
@@ -678,6 +731,7 @@ class _HomeContentState extends State<HomeContent> {
                         child: Text(
                           buttonText,
                           style: TextStyle(
+                            fontFamily: 'Roboto',
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: buttonTextColor,

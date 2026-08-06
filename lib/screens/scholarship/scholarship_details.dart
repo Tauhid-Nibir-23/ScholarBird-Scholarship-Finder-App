@@ -1,11 +1,13 @@
+/// Scholarship detail screen with actions, metadata, and related controls.
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../premium/premium_upgrade_screen.dart';
 import '../../widgets/scholarship_ui.dart';
 import '../../widgets/saved_scholarship_controls.dart';
+import '../../services/application_service.dart';
 
+/// Shows the full scholarship record and links to external actions.
 class ScholarshipDetailsScreen extends StatelessWidget {
   const ScholarshipDetailsScreen({
     required this.data,
@@ -267,12 +269,12 @@ class ScholarshipDetailsScreen extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (!readOnly)
-                FutureBuilder<_ApplicationAccess>(
+                FutureBuilder<ApplicationAccess>(
                   future: _applicationAccess(),
                   builder: (context, snapshot) {
                     final isLoading =
                         snapshot.connectionState == ConnectionState.waiting;
-                    final access = snapshot.data ?? const _ApplicationAccess();
+                    final access = snapshot.data ?? const ApplicationAccess();
 
                     return SizedBox(
                       width: double.infinity,
@@ -280,13 +282,21 @@ class ScholarshipDetailsScreen extends StatelessWidget {
                         onPressed: (isLoading || access.alreadyApplied)
                             ? null
                             : () {
-                                if (access.canApply) {
-                                  _applyScholarship(context);
-                                } else {
+                                if (!access.isLoggedIn) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content: Text('Please login first')),
+                                  );
+                                } else if (!access.isPremium) {
                                   Navigator.of(context).push(MaterialPageRoute(
                                     builder: (_) =>
                                         const PremiumUpgradeScreen(),
                                   ));
+                                } else if (access.missing.isNotEmpty) {
+                                  _showMissingRequirements(
+                                      context, access.missing);
+                                } else {
+                                  _applyScholarship(context);
                                 }
                               },
                         style: ElevatedButton.styleFrom(
@@ -474,99 +484,58 @@ class ScholarshipDetailsScreen extends StatelessWidget {
     return false;
   }
 
-  Future<bool> _hasApplied() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return false;
-
-    final doc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .collection('applications')
-        .doc(data['id'])
-        .get();
-
-    return doc.exists;
-  }
-
-  Future<_ApplicationAccess> _applicationAccess() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return const _ApplicationAccess();
-
-    try {
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
-      final data = userDoc.data() ?? <String, dynamic>{};
-      final expiry = data['subscriptionExpiry'];
-      final expiryDate = expiry is Timestamp
-          ? expiry.toDate()
-          : expiry is DateTime
-              ? expiry
-              : null;
-      final isPremium = data['subscriptionStatus']?.toString() == 'premium' &&
-          (expiryDate == null || expiryDate.isAfter(DateTime.now()));
-      return _ApplicationAccess(
-          canApply: isPremium, alreadyApplied: await _hasApplied());
-    } on FirebaseException {
-      // Failing closed prevents an application from bypassing subscription checks.
-      return const _ApplicationAccess();
-    }
-  }
+  Future<ApplicationAccess> _applicationAccess() =>
+      ApplicationService.instance.checkAccess(data['id']?.toString() ?? '');
 
   Future<void> _applyScholarship(BuildContext context) async {
-    final user = FirebaseAuth.instance.currentUser;
-
-    if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please login first')),
-      );
-      return;
-    }
-
+    final continueToWebsite = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text("You're leaving ScholarBird."),
+        content: const Text(
+            'You will be redirected to the official scholarship website.\n\nHave you started your application?'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Yes, Continue')),
+        ],
+      ),
+    );
+    if (continueToWebsite != true || !context.mounted) return;
     try {
-      final docRef = FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .collection('applications')
-          .doc(data['id']);
-
-      final existing = await docRef.get();
-
-      if (existing.exists) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Already applied to this scholarship'),
-            ),
-          );
-        }
-        return;
-      }
-
-      await docRef.set({
-        'scholarshipId': data['id'],
-        'title': data['title'],
-        'country': data['country'],
-        'degree': data['degree'],
-        'status': 'Applied',
-        'appliedAt': Timestamp.now(),
-      });
-
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Applied Successfully')),
-        );
+      final officialUrl = await ApplicationService.instance.submit(data);
+      final url = Uri.tryParse(officialUrl);
+      if (url == null ||
+          officialUrl.isEmpty ||
+          !await launchUrl(url, mode: LaunchMode.externalApplication)) {
+        throw StateError('Could not open the official website.');
       }
     } catch (e) {
-      print('Firestore Error: $e');
-
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Application failed')),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(e is StateError
+              ? e.message.toString()
+              : 'Application tracking could not be started.'),
+        ));
       }
     }
+  }
+
+  void _showMissingRequirements(BuildContext context, List<String> missing) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Complete your profile'),
+        content: Text('You still need: ${missing.join(', ')}.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context), child: const Text('OK'))
+        ],
+      ),
+    );
   }
 
   String _cleanDescription(String text) {
@@ -577,11 +546,4 @@ class ScholarshipDetailsScreen extends StatelessWidget {
         .replaceAll(RegExp(r'\n\n+'), '\n')
         .trim();
   }
-}
-
-class _ApplicationAccess {
-  const _ApplicationAccess(
-      {this.canApply = false, this.alreadyApplied = false});
-  final bool canApply;
-  final bool alreadyApplied;
 }

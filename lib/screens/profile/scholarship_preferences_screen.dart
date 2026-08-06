@@ -59,7 +59,6 @@ class _ScholarshipPreferencesScreenState
     'USA',
   ];
   final List<String> _degrees = [
-    'Undergraduate',
     'Masters',
     'PhD',
     'Research',
@@ -79,6 +78,7 @@ class _ScholarshipPreferencesScreenState
     'Business Analytics',
     'Chemical Engineering',
     'Civil Engineering',
+    'CSE'
     'Cyber Security',
     'Data Science',
     'Design',

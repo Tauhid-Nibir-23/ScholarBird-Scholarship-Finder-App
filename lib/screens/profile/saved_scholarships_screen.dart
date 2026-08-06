@@ -1,17 +1,29 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+﻿import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../services/saved_scholarships_service.dart';
+import '../../widgets/premium_feature.dart';
+import '../../widgets/premium_guard.dart';
 import '../../widgets/saved_empty_state.dart';
 import '../../widgets/saved_scholarship_card.dart';
 import '../scholarship/scholarship_details.dart';
+import '../scholarship/scholarship_list.dart';
 import 'profile_widgets.dart';
 
 enum _SavedSortOption { newest, deadline, country, degree }
 
 class SavedScholarshipsScreen extends StatefulWidget {
-  const SavedScholarshipsScreen({super.key});
+  const SavedScholarshipsScreen({this.onMenuTap, this.onExplore, super.key});
+
+  /// Host-provided drawer opener so the page can keep using the parent
+  /// scaffold's navigation chrome when embedded as a tab.
+  final VoidCallback? onMenuTap;
+
+  /// Optional host callback fired when the user taps "Browse Scholarships"
+  /// from the empty state. Lets the host switch to its explore tab instead
+  /// of pushing a new route.
+  final VoidCallback? onExplore;
 
   @override
   State<SavedScholarshipsScreen> createState() =>
@@ -138,69 +150,106 @@ class _SavedScholarshipsScreenState extends State<SavedScholarshipsScreen> {
   @override
   Widget build(BuildContext context) {
     final currentUser = FirebaseAuth.instance.currentUser;
+    final canPop = Navigator.of(context).canPop();
 
-    return Scaffold(
-      backgroundColor: sbBackground,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        title: const Text(
-          'Saved Scholarships',
-          style: TextStyle(
-              fontSize: 20, fontWeight: FontWeight.w600, color: sbText),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: sbText),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        actions: [
-          if (_selectedIds.isNotEmpty)
-            IconButton(
-              tooltip: 'Remove selected',
-              icon: const Icon(Icons.delete_outline),
-              onPressed: () async {
-                final confirmed = await showDialog<bool>(
-                  context: context,
-                  builder: (_) => AlertDialog(
-                    title: const Text('Remove selected?'),
-                    content: const Text(
-                        'This removes the selected saved scholarships from your account.'),
-                    actions: [
-                      TextButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          child: const Text('Cancel')),
-                      TextButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          child: const Text('Remove')),
-                    ],
+    return PremiumGuard(
+      feature: PremiumFeature.unlimitedSavedScholarships,
+      child: Column(
+      children: [
+        // In-app chrome so the screen renders consistently whether it is
+        // embedded as a tab (where the host already owns a Scaffold) or
+        // pushed as a standalone route.
+        Container(
+          color: Colors.white,
+          padding: const EdgeInsets.only(top: 4, bottom: 4),
+          child: SafeArea(
+            bottom: false,
+            child: Row(
+              children: [
+                if (canPop)
+                  IconButton(
+                    tooltip: 'Back',
+                    icon: const Icon(Icons.arrow_back_rounded, color: sbText),
+                    onPressed: () => Navigator.of(context).pop(),
+                  )
+                else if (widget.onMenuTap != null)
+                  IconButton(
+                    tooltip: 'Open navigation menu',
+                    icon: const Icon(Icons.menu_rounded, color: sbText),
+                    onPressed: widget.onMenuTap,
+                  )
+                else
+                  const SizedBox(width: 48),
+                Expanded(
+                  child: Text(
+                    'Saved Scholarships',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontFamily: 'Roboto',
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: sbText,
+                    ),
                   ),
-                );
-                if (confirmed == true) {
-                  await _removeSelected();
-                }
-              },
+                ),
+                if (_selectedIds.isNotEmpty)
+                  IconButton(
+                    tooltip: 'Remove selected',
+                    icon: const Icon(Icons.delete_outline),
+                    onPressed: () async {
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (_) => AlertDialog(
+                          title: const Text('Remove selected?'),
+                          content: const Text(
+                              'This removes the selected saved scholarships from your account.'),
+                          actions: [
+                            TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: const Text('Cancel')),
+                            TextButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                child: const Text('Remove')),
+                          ],
+                        ),
+                      );
+                      if (confirmed == true) {
+                        await _removeSelected();
+                      }
+                    },
+                  )
+                else
+                  IconButton(
+                    tooltip: _gridMode ? 'List view' : 'Grid view',
+                    icon: Icon(_gridMode
+                        ? Icons.view_list_outlined
+                        : Icons.grid_view_outlined),
+                    onPressed: () => setState(() => _gridMode = !_gridMode),
+                  ),
+              ],
             ),
-          IconButton(
-            tooltip: _gridMode ? 'List view' : 'Grid view',
-            icon: Icon(_gridMode
-                ? Icons.view_list_outlined
-                : Icons.grid_view_outlined),
-            onPressed: () => setState(() => _gridMode = !_gridMode),
           ),
-        ],
-      ),
-      body: currentUser == null
-          ? const Center(
-              child: Text(
-                'Please log in to view saved scholarships.',
-                style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                    color: sbSecondaryText),
-              ),
-            )
-          : StreamBuilder<List<Map<String, dynamic>>>(
+        ),
+        Expanded(
+          child: currentUser == null
+              ? const Center(
+                  child: Text(
+                    'Please log in to view saved scholarships.',
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: sbSecondaryText),
+                  ),
+                )
+              : _buildBody(context),
+        ),
+      ],
+    ),
+    );
+  }
+
+  Widget _buildBody(BuildContext context) {
+    return StreamBuilder<List<Map<String, dynamic>>>(
               stream: SavedScholarshipsService.instance
                   .watchSavedScholarshipsWithFallback(),
               builder: (context, snapshot) {
@@ -218,7 +267,19 @@ class _SavedScholarshipsScreenState extends State<SavedScholarshipsScreen> {
 
                 if (rawItems.isEmpty) {
                   return SavedEmptyState(
-                    onBrowse: () => Navigator.of(context).maybePop(),
+                    onBrowse: () {
+                      // Prefer the host-supplied tab switch so the bottom nav
+                      // and drawer remain visible.
+                      if (widget.onExplore != null) {
+                        widget.onExplore!();
+                        return;
+                      }
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const ScholarshipsScreen(),
+                        ),
+                      );
+                    },
                   );
                 }
 
@@ -432,7 +493,6 @@ class _SavedScholarshipsScreenState extends State<SavedScholarshipsScreen> {
                   ),
                 );
               },
-            ),
     );
   }
 

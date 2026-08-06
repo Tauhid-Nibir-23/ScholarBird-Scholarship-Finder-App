@@ -1,7 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
+import '../services/banner_image_service.dart';
 import 'admin_ui.dart';
+import 'widgets/admin_dialogs.dart';
+import 'widgets/admin_image_picker.dart';
 
 class AddScholarshipPage extends StatefulWidget {
   const AddScholarshipPage({super.key, this.scholarship});
@@ -39,11 +43,12 @@ class _AddScholarshipPageState extends State<AddScholarshipPage> {
     _countryController.text = data['country']?.toString() ?? '';
     _degreeController.text = data['degree']?.toString() ?? '';
     _fieldController.text = data['field']?.toString() ?? '';
-    _deadlineController.text = data['deadline']?.toString() ?? '';
-    _fundingController.text = data['amount']?.toString() ?? '';
+    _deadlineController.text = _dateText(data['deadline']);
+    _fundingController.text =
+        data['funding']?.toString() ?? data['fundingType']?.toString() ?? data['amount']?.toString() ?? '';
     _imageUrlController.text = data['image']?.toString() ?? '';
     _descriptionController.text = data['description']?.toString() ?? '';
-    _officialLinkController.text = data['link']?.toString() ?? '';
+    _officialLinkController.text = data['sourceUrl']?.toString() ?? data['link']?.toString() ?? '';
     _minimumCgpaController.text = data['minCgpa']?.toString() ?? '';
     _ieltsRequired = data['ieltsRequired'] == true;
     _researchRequired = data['researchRequired'] == true;
@@ -80,6 +85,69 @@ class _AddScholarshipPageState extends State<AddScholarshipPage> {
     }
   }
 
+  String? get _scholarshipId => widget.scholarship?.id;
+
+  Future<String?> _uploadBanner(ImageSource source) async {
+    final id = _scholarshipId;
+    if (id == null) {
+      // New scholarship: save first so the file has a stable id to
+      // namespace under in Supabase Storage.
+      if (!(_formKey.currentState?.validate() ?? false)) return null;
+      final docRef = await FirebaseFirestore.instance
+          .collection('scholarships')
+          .add({
+        'title': _titleController.text.trim(),
+        'country': _countryController.text.trim(),
+        'degree': _degreeController.text.trim(),
+        'field': _fieldController.text.trim(),
+        'deadline': _deadlineController.text.trim(),
+        'funding': _fundingController.text.trim(),
+        'fundingType': _fundingController.text.trim(),
+        'amount': _fundingController.text.trim(),
+        'image': _imageUrlController.text.trim(),
+        'description': _descriptionController.text.trim(),
+        'link': _officialLinkController.text.trim(),
+        'sourceUrl': _officialLinkController.text.trim(),
+        'minCgpa': _minimumCgpaController.text.trim(),
+        'ieltsRequired': _ieltsRequired,
+        'researchRequired': _researchRequired,
+        'isFeatured': false,
+        'isHidden': false,
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      final url = source == ImageSource.gallery
+          ? await BannerImageService.instance
+              .pickAndUploadFromGallery(docRef.id)
+          : await BannerImageService.instance
+              .pickAndUploadFromCamera(docRef.id);
+      if (url != null) {
+        setState(() => _imageUrlController.text = url);
+      }
+      return url;
+    }
+
+    final url = source == ImageSource.gallery
+        ? await BannerImageService.instance
+            .pickAndUploadFromGallery(id)
+        : await BannerImageService.instance
+            .pickAndUploadFromCamera(id);
+    if (url != null) {
+      setState(() => _imageUrlController.text = url);
+    }
+    return url;
+  }
+
+  Future<void> _removeBanner() async {
+    final id = _scholarshipId;
+    if (id == null) {
+      setState(() => _imageUrlController.text = '');
+      return;
+    }
+    await BannerImageService.instance.removeBannerImage(id);
+    setState(() => _imageUrlController.text = '');
+  }
+
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() => _isSaving = true);
@@ -89,10 +157,13 @@ class _AddScholarshipPageState extends State<AddScholarshipPage> {
       'degree': _degreeController.text.trim(),
       'field': _fieldController.text.trim(),
       'deadline': _deadlineController.text.trim(),
+      'funding': _fundingController.text.trim(),
+      'fundingType': _fundingController.text.trim(),
       'amount': _fundingController.text.trim(),
       'image': _imageUrlController.text.trim(),
       'description': _descriptionController.text.trim(),
       'link': _officialLinkController.text.trim(),
+      'sourceUrl': _officialLinkController.text.trim(),
       'minCgpa': _minimumCgpaController.text.trim(),
       'ieltsRequired': _ieltsRequired,
       'researchRequired': _researchRequired,
@@ -111,11 +182,9 @@ class _AddScholarshipPageState extends State<AddScholarshipPage> {
         });
       }
       if (mounted) Navigator.of(context).pop();
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not save scholarship.')),
-        );
+        AdminDialogs.error(context, 'Could not save scholarship: $e');
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -169,6 +238,38 @@ class _AddScholarshipPageState extends State<AddScholarshipPage> {
                                 validator: _required),
                             _field(_fundingController, 'Funding',
                                 required: true),
+                            const SizedBox(height: 8),
+                            Text('Banner image',
+                                style: Theme.of(context).textTheme.titleSmall),
+                            const SizedBox(height: 6),
+                            const Text(
+                              'Upload a 16:9 hero image. Stored in Supabase; '
+                              'URL is mirrored to Firestore on save.',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AdminPalette.body,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Center(
+                              child: AdminImagePicker(
+                                photoUrl:
+                                    _imageUrlController.text.trim().isEmpty
+                                        ? null
+                                        : _imageUrlController.text.trim(),
+                                title: 'Scholarship banner',
+                                subtitle:
+                                    'Recommended: 1600x900 (16:9).',
+                                fallbackLabel: 'Banner',
+                                shape: AdminImagePickerShape.rounded,
+                                aspectRatio: 16 / 9,
+                                onUploadFromGallery: () =>
+                                    _uploadBanner(ImageSource.gallery),
+                                onUploadFromCamera: () =>
+                                    _uploadBanner(ImageSource.camera),
+                                onRemove: _removeBanner,
+                              ),
+                            ),
                           ]),
                           const SizedBox(height: 20),
                           _FormSection(title: 'Eligibility & links', children: [
@@ -230,6 +331,16 @@ class _AddScholarshipPageState extends State<AddScholarshipPage> {
 
   String? _required(String? value) =>
       value == null || value.trim().isEmpty ? 'Required' : null;
+
+  String _dateText(dynamic value) {
+    final date = value is Timestamp
+        ? value.toDate()
+        : value is DateTime
+            ? value
+            : null;
+    if (date == null) return value?.toString() ?? '';
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+  }
 
   Widget _field(TextEditingController controller, String label,
           {bool required = false, TextInputType? keyboardType}) =>

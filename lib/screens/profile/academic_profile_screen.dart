@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'profile_widgets.dart';
@@ -76,10 +77,16 @@ class _AcademicProfileScreenState extends State<AcademicProfileScreen> {
       final data = snapshot.data();
       if (data != null) {
         _currentYearController.text = (data['currentYear'] ?? '').toString();
-        _cgpaController.text = (data['cgpa'] ?? '').toString();
-        _cgpaScaleController.text = (data['cgpaScale'] ?? '').toString();
-        _ieltsController.text = (data['ielts'] ?? '').toString();
-        _toeflController.text = (data['toefl'] ?? '').toString();
+        // Don't repopulate legacy 0 values for optional numeric fields —
+        // treat them as "not entered" so the hint is shown instead.
+        _cgpaController.text =
+            _isMeaningfulNumber(data['cgpa']) ? data['cgpa'].toString() : '';
+        _cgpaScaleController.text =
+            _isMeaningfulNumber(data['cgpaScale']) ? data['cgpaScale'].toString() : '';
+        _ieltsController.text =
+            _isMeaningfulNumber(data['ielts']) ? data['ielts'].toString() : '';
+        _toeflController.text =
+            _isMeaningfulNumber(data['toefl']) ? data['toefl'].toString() : '';
         final researchValue = data['researchExperience'];
         if (researchValue is bool) {
           _researchController.text = researchValue ? 'Yes' : 'No';
@@ -87,8 +94,13 @@ class _AcademicProfileScreenState extends State<AcademicProfileScreen> {
           _researchController.text = (researchValue ?? '').toString();
         }
         _publicationsController.text =
-            (data['publicationCount'] ?? '').toString();
-        _workController.text = (data['workExperienceYears'] ?? '').toString();
+            _isMeaningfulNumber(data['publicationCount'])
+                ? data['publicationCount'].toString()
+                : '';
+        _workController.text =
+            _isMeaningfulNumber(data['workExperienceYears'])
+                ? data['workExperienceYears'].toString()
+                : '';
         _graduationYearController.text =
             (data['graduationYear'] ?? '').toString();
         _backlogsController.text = (data['backlogs'] ?? '').toString();
@@ -98,7 +110,10 @@ class _AcademicProfileScreenState extends State<AcademicProfileScreen> {
         } else {
           _englishMediumController.text = (englishMediumValue ?? '').toString();
         }
-        _awardsController.text = (data['awardsCount'] ?? '').toString();
+        _awardsController.text =
+            _isMeaningfulNumber(data['awardsCount'])
+                ? data['awardsCount'].toString()
+                : '';
         _targetDegreeController.text = (data['targetDegree'] ?? '').toString();
       }
     } catch (e) {
@@ -141,8 +156,12 @@ class _AcademicProfileScreenState extends State<AcademicProfileScreen> {
     }
 
     final ielts = double.tryParse(_ieltsController.text.trim()) ?? 0;
-    if (ielts > 9.0) {
-      _showMessage('IELTS score cannot exceed 9');
+    if (ielts < 0 || ielts > 9) {
+      _showMessage('IELTS score must be between 0 and 9');
+      return;
+    }
+    if (ielts > 0 && (ielts * 2).roundToDouble() / 2 != ielts) {
+      _showMessage('IELTS score must be in 0.5 increments');
       return;
     }
 
@@ -169,30 +188,41 @@ class _AcademicProfileScreenState extends State<AcademicProfileScreen> {
 
     setState(() => _isSaving = true);
     try {
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(currentUser.uid)
-          .set({
-        'currentYear': currentYear,
-        'cgpa': cgpa,
-        'cgpaScale': cgpaScale,
-        'ielts': double.tryParse(_ieltsController.text.trim()) ?? 0,
-        'toefl': toefl,
+      // Treat empty numeric inputs as "not entered" so the field stays
+      // blank instead of being stored as 0 and shown as a fake filled value.
+      final cgpaText = _cgpaController.text.trim();
+      final cgpaScaleText = _cgpaScaleController.text.trim();
+      final ieltsText = _ieltsController.text.trim();
+      final toeflText = _toeflController.text.trim();
+      final publicationsText = _publicationsController.text.trim();
+      final workText = _workController.text.trim();
+      final awardsText = _awardsController.text.trim();
+
+      final updates = <String, dynamic>{
         'researchExperience':
             _researchController.text.trim().toLowerCase() == 'yes',
-        'publicationCount':
-            int.tryParse(_publicationsController.text.trim()) ?? 0,
-        'workExperienceYears':
-            double.tryParse(_workController.text.trim()) ?? 0,
-        'graduationYear': graduationYear,
-        'backlogs': backlogs,
         'englishMedium':
             _englishMediumController.text.trim().toLowerCase() == 'yes',
-        'awardsCount': int.tryParse(_awardsController.text.trim()) ?? 0,
         'targetDegree': _targetDegreeController.text.trim(),
         'academicProfileCompleted': true,
         'academicUpdatedAt': Timestamp.now(),
-      }, SetOptions(merge: true));
+      };
+
+      if (currentYear > 0) updates['currentYear'] = currentYear;
+      if (cgpaText.isNotEmpty) updates['cgpa'] = cgpa;
+      if (cgpaScaleText.isNotEmpty) updates['cgpaScale'] = cgpaScale;
+      if (ieltsText.isNotEmpty) updates['ielts'] = double.parse(ieltsText);
+      if (toeflText.isNotEmpty) updates['toefl'] = toefl;
+      if (publicationsText.isNotEmpty) updates['publicationCount'] = int.parse(publicationsText);
+      if (workText.isNotEmpty) updates['workExperienceYears'] = double.parse(workText);
+      if (graduationYear > 0) updates['graduationYear'] = graduationYear;
+      updates['backlogs'] = backlogs;
+      if (awardsText.isNotEmpty) updates['awardsCount'] = int.parse(awardsText);
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .set(updates, SetOptions(merge: true));
 
       if (mounted) {
         _showMessage('Academic profile saved.');
@@ -214,6 +244,20 @@ class _AcademicProfileScreenState extends State<AcademicProfileScreen> {
     );
   }
 
+  Widget _buildSectionHeader(String text) {
+    return ProfileSectionLabel(text.toUpperCase());
+  }
+
+  /// Returns true only when [value] is a non-null numeric that's greater
+  /// than zero. Used to skip repopulating legacy `0`s for fields where
+  /// zero is just a placeholder for "not entered".
+  bool _isMeaningfulNumber(Object? value) {
+    if (value == null) return false;
+    if (value is num) return value > 0;
+    final parsed = num.tryParse(value.toString());
+    return parsed != null && parsed > 0;
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
         backgroundColor: sbBackground,
@@ -223,7 +267,7 @@ class _AcademicProfileScreenState extends State<AcademicProfileScreen> {
           title: const Text(
             'Academic Profile',
             style: TextStyle(
-              fontSize: 20,
+              fontSize: 18,
               fontWeight: FontWeight.w600,
               color: sbText,
             ),
@@ -249,21 +293,25 @@ class _AcademicProfileScreenState extends State<AcademicProfileScreen> {
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
                           color: sbText,
+                          height: 1.3,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
                       const Text(
                         'Add your academic details for AI-driven matching.',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w400,
                           color: sbSecondaryText,
+                          height: 1.4,
                         ),
                       ),
                       const SizedBox(height: 24),
+                      _buildSectionHeader('Academic Standing'),
+                      const SizedBox(height: 12),
                       ProfileTextField(
                         controller: _currentYearController,
-                        hintText: 'Current Year',
+                        hintText: 'Current Year (1–5)',
                         prefixIcon: Icons.calendar_today_outlined,
                         keyboardType: TextInputType.number,
                       ),
@@ -285,23 +333,80 @@ class _AcademicProfileScreenState extends State<AcademicProfileScreen> {
                       ),
                       const SizedBox(height: 16),
                       ProfileTextField(
-                        controller: _ieltsController,
-                        hintText: 'IELTS Score',
-                        prefixIcon: Icons.record_voice_over_outlined,
-                        keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true),
+                        controller: _backlogsController,
+                        hintText: 'Backlogs',
+                        prefixIcon: Icons.error_outline,
+                        keyboardType: TextInputType.number,
                       ),
                       const SizedBox(height: 16),
                       ProfileTextField(
-                        controller: _toeflController,
-                        hintText: 'TOEFL Score',
-                        prefixIcon: Icons.headphones_outlined,
+                        controller: _graduationYearController,
+                        hintText: 'Graduation Year',
+                        prefixIcon: Icons.school_outlined,
                         keyboardType: TextInputType.number,
                       ),
                       const SizedBox(height: 16),
                       ProfileDropdownField(
+                        label: 'Target Degree',
+                        hint: 'Select your scholarship target',
+                        value: _targetDegreeOptions
+                                .contains(_targetDegreeController.text.trim())
+                            ? _targetDegreeController.text.trim()
+                            : null,
+                        items: _targetDegreeOptions,
+                        prefixIcon: Icons.flag_outlined,
+                        onChanged: (value) {
+                          _targetDegreeController.text = value ?? '';
+                          setState(() {});
+                        },
+                      ),
+                      const SizedBox(height: 24),
+                      _buildSectionHeader('English Proficiency'),
+                      const SizedBox(height: 12),
+                      ProfileTextField(
+                        controller: _ieltsController,
+                        hintText: 'IELTS Score (0–9, in 0.5 steps)',
+                        prefixIcon: Icons.record_voice_over_outlined,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                              RegExp(r'^\d{0,1}(\.\d{0,1})?$')),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      ProfileTextField(
+                        controller: _toeflController,
+                        hintText: 'TOEFL Score (0–120)',
+                        prefixIcon: Icons.headphones_outlined,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(3),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      ProfileDropdownField(
+                        label: 'English Medium',
+                        hint: 'Select Yes or No',
+                        value: _yesNoOptions
+                                .contains(_englishMediumController.text.trim())
+                            ? _englishMediumController.text.trim()
+                            : null,
+                        items: _yesNoOptions,
+                        prefixIcon: Icons.language_outlined,
+                        onChanged: (value) {
+                          _englishMediumController.text = value ?? '';
+                          setState(() {});
+                        },
+                      ),
+                      const SizedBox(height: 24),
+                      _buildSectionHeader('Research & Experience'),
+                      const SizedBox(height: 12),
+                      ProfileDropdownField(
                         label: 'Research Experience',
                         hint: 'Select Yes or No',
+                        showLabel: false,
                         value: _yesNoOptions
                                 .contains(_researchController.text.trim())
                             ? _researchController.text.trim()
@@ -328,29 +433,9 @@ class _AcademicProfileScreenState extends State<AcademicProfileScreen> {
                         keyboardType: const TextInputType.numberWithOptions(
                             decimal: true),
                       ),
-                      const SizedBox(height: 16),
-                      ProfileTextField(
-                        controller: _backlogsController,
-                        hintText: 'Backlogs',
-                        prefixIcon: Icons.error_outline,
-                        keyboardType: TextInputType.number,
-                      ),
-                      const SizedBox(height: 16),
-                      ProfileDropdownField(
-                        label: 'English Medium',
-                        hint: 'Select Yes or No',
-                        value: _yesNoOptions
-                                .contains(_englishMediumController.text.trim())
-                            ? _englishMediumController.text.trim()
-                            : null,
-                        items: _yesNoOptions,
-                        prefixIcon: Icons.language_outlined,
-                        onChanged: (value) {
-                          _englishMediumController.text = value ?? '';
-                          setState(() {});
-                        },
-                      ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 24),
+                      _buildSectionHeader('Achievements'),
+                      const SizedBox(height: 12),
                       ProfileTextField(
                         controller: _awardsController,
                         hintText: 'Awards Count',
@@ -358,28 +443,6 @@ class _AcademicProfileScreenState extends State<AcademicProfileScreen> {
                         keyboardType: TextInputType.number,
                       ),
                       const SizedBox(height: 16),
-                      ProfileTextField(
-                        controller: _graduationYearController,
-                        hintText: 'Graduation Year',
-                        prefixIcon: Icons.school_outlined,
-                        keyboardType: TextInputType.number,
-                      ),
-                      const SizedBox(height: 16),
-                      ProfileDropdownField(
-                        label: 'Target Degree',
-                        hint: 'Select your scholarship target',
-                        value: _targetDegreeOptions
-                                .contains(_targetDegreeController.text.trim())
-                            ? _targetDegreeController.text.trim()
-                            : null,
-                        items: _targetDegreeOptions,
-                        prefixIcon: Icons.flag_outlined,
-                        onChanged: (value) {
-                          _targetDegreeController.text = value ?? '';
-                          setState(() {});
-                        },
-                      ),
-                      const SizedBox(height: 28),
                       ProfilePrimaryButton(
                         title: 'Save',
                         onPressed: _saveAcademicProfile,

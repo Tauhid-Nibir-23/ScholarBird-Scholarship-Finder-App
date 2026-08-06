@@ -1,0 +1,64 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function isAdmin() {
+      return signedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    function ownsUser(userId) { return signedIn() && request.auth.uid == userId; }
+
+    match /scholarships/{scholarshipId} {
+      allow read: if signedIn();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (signedIn() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['applicationCount']) &&
+        request.resource.data.applicationCount == resource.data.applicationCount + 1);
+    }
+
+    match /applications/{applicationId} {
+      allow read: if signedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid &&
+        request.resource.data.applicationId == applicationId &&
+        request.resource.data.status == 'IN_PROGRESS';
+      allow update: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid &&
+        request.resource.data.userId == resource.data.userId &&
+        request.resource.data.status in ['IN_PROGRESS', 'SUBMITTED']);
+      allow delete: if isAdmin();
+    }
+
+    match /users/{userId} {
+      allow read: if ownsUser(userId) || isAdmin();
+      // A client may create its own signup profile, but cannot self-assign an
+      // administrative role. Admins own role, premium, and ban changes.
+      allow create: if ownsUser(userId) &&
+        (!('role' in request.resource.data) || request.resource.data.role == 'user');
+      allow update: if isAdmin() || (ownsUser(userId) &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'role', 'suspended', 'premium', 'premiumUpdatedAt',
+          'subscriptionStatus', 'subscriptionPlan', 'subscriptionStart',
+          'subscriptionExpiry', 'paymentGateway', 'lastPaymentId',
+          'lastTransactionId'
+        ]));
+      allow delete: if isAdmin();
+
+      match /applications/{applicationId} {
+        allow read, write: if ownsUser(userId) || isAdmin();
+      }
+
+      match /{subcollection}/{documentId} {
+        allow read, write: if subcollection != 'applications' && (ownsUser(userId) || isAdmin());
+      }
+    }
+
+    match /mentors/{mentorId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isAdmin();
+    }
+    match /notifications/{notificationId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isAdmin();
+    }
+    match /activity_logs/{logId} { allow read, write: if isAdmin(); }
+  }
+}

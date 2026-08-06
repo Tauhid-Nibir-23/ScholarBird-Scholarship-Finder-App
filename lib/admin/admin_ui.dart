@@ -1,5 +1,7 @@
+/// Shared visual primitives and theme values for the admin experience.
 import 'package:flutter/material.dart';
 
+/// Admin color palette used across cards, surfaces, and headings.
 class AdminPalette {
   const AdminPalette._();
 
@@ -10,6 +12,7 @@ class AdminPalette {
   static const body = Color(0xFF6B7A95);
 }
 
+/// Admin theme factory used by the shell layout and dashboard pages.
 class AdminTheme {
   const AdminTheme._();
 
@@ -57,6 +60,7 @@ class AdminTheme {
       );
 }
 
+/// Standard elevated admin surface used to group related content.
 class AdminSurface extends StatelessWidget {
   const AdminSurface(
       {required this.child,
@@ -87,6 +91,7 @@ class AdminSurface extends StatelessWidget {
       );
 }
 
+/// Section heading component for the admin UI.
 class AdminSectionTitle extends StatelessWidget {
   const AdminSectionTitle({required this.title, super.key, this.subtitle});
 
@@ -108,6 +113,7 @@ class AdminSectionTitle extends StatelessWidget {
       );
 }
 
+/// Circular admin avatar used for headings and identity placeholders.
 class AdminAvatar extends StatelessWidget {
   const AdminAvatar({required this.name, super.key, this.radius = 20});
 

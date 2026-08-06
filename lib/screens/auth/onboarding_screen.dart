@@ -1,6 +1,8 @@
+/// First-run onboarding flow that introduces the app's value proposition.
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Shows the onboarding carousel and persists completion state.
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 

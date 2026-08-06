@@ -1,7 +1,9 @@
+/// Compact save/unsave controls shared across scholarship screens.
 import 'package:flutter/material.dart';
 
 import '../services/saved_scholarships_service.dart';
 
+/// Shows the scholarship save button and optional selection controls.
 class SavedScholarshipIconButton extends StatelessWidget {
   const SavedScholarshipIconButton({
     required this.scholarship,

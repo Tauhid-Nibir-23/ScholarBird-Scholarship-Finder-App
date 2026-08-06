@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -38,15 +40,17 @@ class AnalyticsPage extends StatelessWidget {
               final applications = applicationsSnapshot.data?.docs ?? [];
               final statusCounts = <String, int>{
                 'pending': 0,
-                'approved': 0,
-                'rejected': 0
+                'applied': 0,
+                'accepted': 0,
+                'rejected': 0,
               };
               final scholarshipCounts = <String, int>{};
 
               for (final application in applications) {
                 final data = application.data();
-                final status =
+                var status =
                     data['status']?.toString().toLowerCase() ?? 'pending';
+                if (status == 'approved') status = 'accepted';
                 if (statusCounts.containsKey(status)) {
                   statusCounts[status] = statusCounts[status]! + 1;
                 } else {
@@ -82,32 +86,52 @@ class AnalyticsPage extends StatelessWidget {
                         const SizedBox(height: 6),
                         const Text('A live overview of ScholarBird activity.'),
                         const SizedBox(height: 28),
-                        Wrap(spacing: 16, runSpacing: 16, children: [
-                          _MetricCard(
-                              label: 'Total Users',
-                              value: users.length.toString(),
-                              icon: Icons.people_outline),
-                          _MetricCard(
-                              label: 'Total Scholarships',
-                              value: scholarships.length.toString(),
-                              icon: Icons.school_outlined),
-                          _MetricCard(
-                              label: 'Total Applications',
-                              value: applications.length.toString(),
-                              icon: Icons.description_outlined),
-                          _MetricCard(
-                              label: 'Pending Applications',
-                              value: statusCounts['pending'].toString(),
-                              icon: Icons.schedule_outlined),
-                          _MetricCard(
-                              label: 'Approved Applications',
-                              value: statusCounts['approved'].toString(),
-                              icon: Icons.check_circle_outline),
-                          _MetricCard(
-                              label: 'Rejected Applications',
-                              value: statusCounts['rejected'].toString(),
-                              icon: Icons.cancel_outlined),
-                        ]),
+                        LayoutBuilder(builder: (context, constraints) {
+                          return GridView.count(
+                            crossAxisCount: 2,
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            mainAxisSpacing: 12,
+                            crossAxisSpacing: 12,
+                            childAspectRatio:
+                                constraints.maxWidth < 500 ? 1.7 : 2.25,
+                            children: [
+                              _MetricCard(
+                                  label: 'Total Users',
+                                  value: users.length.toString(),
+                                  icon: Icons.people_outline),
+                              _MetricCard(
+                                  label: 'Total Scholarships',
+                                  value: scholarships.length.toString(),
+                                  icon: Icons.school_outlined),
+                              _MetricCard(
+                                  label: 'Total Applications',
+                                  value: applications.length.toString(),
+                                  icon: Icons.description_outlined),
+                              _MetricCard(
+                                  label: 'Pending Applications',
+                                  value: statusCounts['pending'].toString(),
+                                  icon: Icons.schedule_outlined),
+                              _MetricCard(
+                                  label: 'Applied Applications',
+                                  value: statusCounts['applied'].toString(),
+                                  icon: Icons.assignment_turned_in_outlined),
+                              _MetricCard(
+                                  label: 'Accepted Applications',
+                                  value: statusCounts['accepted'].toString(),
+                                  icon: Icons.check_circle_outline),
+                              _MetricCard(
+                                  label: 'Rejected Applications',
+                                  value: statusCounts['rejected'].toString(),
+                                  icon: Icons.cancel_outlined),
+                            ],
+                          );
+                        }),
+                        const SizedBox(height: 28),
+                        _Panel(
+                          title: 'Application Status',
+                          child: _StatusDonutChart(counts: statusCounts),
+                        ),
                         const SizedBox(height: 28),
                         LayoutBuilder(builder: (context, constraints) {
                           final mostAppliedPanel = _Panel(
@@ -138,7 +162,8 @@ class AnalyticsPage extends StatelessWidget {
                                         title: Text(data['name']?.toString() ??
                                             'Unnamed user'),
                                         subtitle: Text(
-                                            data['email']?.toString() ?? '—'),
+                                            data['email']?.toString() ??
+                                                'Ã¢â‚¬â€'),
                                         trailing:
                                             Text(_dateLabel(data['createdAt'])),
                                       );
@@ -177,7 +202,7 @@ DateTime _createdAt(Map<String, dynamic> data) {
 }
 
 String _dateLabel(dynamic value) {
-  if (value is! Timestamp) return '—';
+  if (value is! Timestamp) return 'Ã¢â‚¬â€';
   final date = value.toDate();
   return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
 }
@@ -197,7 +222,6 @@ class _MetricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SizedBox(
-        width: 220,
         child: AdminSurface(
           padding: EdgeInsets.zero,
           child: Padding(
@@ -244,4 +268,116 @@ class _Panel extends StatelessWidget {
           ]),
         ),
       );
+}
+
+class _StatusDonutChart extends StatelessWidget {
+  const _StatusDonutChart({required this.counts});
+
+  final Map<String, int> counts;
+
+  static const _items = <({String key, String label, Color color})>[
+    (key: 'pending', label: 'Pending', color: Color(0xFF64748B)),
+    (key: 'applied', label: 'Applied', color: Color(0xFFD97706)),
+    (key: 'accepted', label: 'Accepted', color: Color(0xFF16A34A)),
+    (key: 'rejected', label: 'Rejected', color: Color(0xFFDC2626)),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final total = counts.values.fold<int>(0, (sum, value) => sum + value);
+    return LayoutBuilder(
+      builder: (context, constraints) => Wrap(
+        spacing: 24,
+        runSpacing: 20,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          SizedBox(
+            width: 180,
+            height: 180,
+            child: CustomPaint(
+              painter: _DonutPainter(
+                values: [for (final item in _items) counts[item.key] ?? 0],
+                colors: [for (final item in _items) item.color],
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('$total',
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineSmall
+                            ?.copyWith(fontWeight: FontWeight.bold)),
+                    const Text('Applications'),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          SizedBox(
+            width: math.max(180, constraints.maxWidth - 220),
+            child: Column(
+              children: [
+                for (final item in _items)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 5),
+                    child: Row(
+                      children: [
+                        Container(
+                            width: 12,
+                            height: 12,
+                            decoration: BoxDecoration(
+                                color: item.color, shape: BoxShape.circle)),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text(item.label)),
+                        Text('${counts[item.key] ?? 0}',
+                            style:
+                                const TextStyle(fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DonutPainter extends CustomPainter {
+  const _DonutPainter({required this.values, required this.colors});
+
+  final List<int> values;
+  final List<Color> colors;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final total = values.fold<int>(0, (sum, value) => sum + value);
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = math.min(size.width, size.height) / 2 - 12;
+    final rect = Rect.fromCircle(center: center, radius: radius);
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 24
+      ..strokeCap = StrokeCap.butt;
+    if (total == 0) {
+      paint.color = const Color(0xFFE2E8F0);
+      canvas.drawCircle(center, radius, paint);
+      return;
+    }
+    var startAngle = -math.pi / 2;
+    for (var index = 0; index < values.length; index++) {
+      final sweep = values[index] / total * math.pi * 2;
+      if (sweep > 0) {
+        paint.color = colors[index];
+        canvas.drawArc(rect, startAngle, sweep, false, paint);
+      }
+      startAngle += sweep;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DonutPainter oldDelegate) =>
+      oldDelegate.values != values || oldDelegate.colors != colors;
 }

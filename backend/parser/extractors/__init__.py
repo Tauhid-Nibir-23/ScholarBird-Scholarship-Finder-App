@@ -41,11 +41,21 @@ from .engine import (
     FieldExtractor,
     extract_fields_from_html,
 )
+from .image_robust import (
+    HERO_CLASS_TOKENS,
+    RobustImageResult,
+    extract_robust_images,
+    pick_best as pick_best_image,
+)
 
 
 __all__ = [
     "ExtractedFields",
     "FetchedPage",
     "FieldExtractor",
+    "HERO_CLASS_TOKENS",
+    "RobustImageResult",
     "extract_fields_from_html",
+    "extract_robust_images",
+    "pick_best_image",
 ]

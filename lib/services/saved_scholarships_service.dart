@@ -1,6 +1,8 @@
+/// Handles per-user saved scholarship persistence and live query helpers.
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+/// Materialized saved-scholarship data with the originating document id.
 class SavedScholarshipRef {
   const SavedScholarshipRef({
     required this.id,
@@ -18,6 +20,7 @@ class SavedScholarshipRef {
       };
 }
 
+/// Coordinates Firestore reads and writes for the saved scholarships feature.
 class SavedScholarshipsService {
   SavedScholarshipsService._();
 
@@ -41,6 +44,7 @@ class SavedScholarshipsService {
     return collection.doc(scholarshipId);
   }
 
+  /// Emits whether the current user has saved the given scholarship.
   Stream<bool> watchSavedStatus(String scholarshipId) {
     final doc = _doc(scholarshipId);
     if (doc == null) return Stream.value(false);
@@ -49,6 +53,7 @@ class SavedScholarshipsService {
         .map((snapshot) => snapshot.exists);
   }
 
+  /// Streams the current user's saved scholarships ordered by most recent save.
   Stream<List<SavedScholarshipRef>> watchSavedScholarships() {
     final collection = _collection();
     if (collection == null) return Stream.value(const <SavedScholarshipRef>[]);
@@ -74,6 +79,7 @@ class SavedScholarshipsService {
         );
   }
 
+  /// Persists a scholarship snapshot into the signed-in user's saved list.
   Future<void> saveScholarship(Map<String, dynamic> scholarship) async {
     final scholarshipId = (scholarship['id'] ?? '').toString();
     final doc = _doc(scholarshipId);
@@ -100,6 +106,7 @@ class SavedScholarshipsService {
     }, SetOptions(merge: true));
   }
 
+  /// Removes a scholarship from the signed-in user's saved list.
   Future<void> unsaveScholarship(String scholarshipId) async {
     final doc = _doc(scholarshipId);
     if (doc == null || scholarshipId.isEmpty) {
@@ -113,6 +120,7 @@ class SavedScholarshipsService {
     await doc.delete();
   }
 
+  /// Saves or removes a scholarship depending on whether it already exists.
   Future<void> toggleSaved(Map<String, dynamic> scholarship) async {
     final scholarshipId = (scholarship['id'] ?? '').toString();
     final doc = _doc(scholarshipId);
@@ -134,6 +142,7 @@ class SavedScholarshipsService {
     await saveScholarship(scholarship);
   }
 
+  /// Deletes every saved scholarship for the current user in one batch.
   Future<void> clearAllSaved() async {
     final collection = _collection();
     if (collection == null) return;
@@ -146,6 +155,7 @@ class SavedScholarshipsService {
     await batch.commit();
   }
 
+  /// Deletes a set of saved scholarships in a single batch request.
   Future<void> removeMany(Iterable<String> scholarshipIds) async {
     final collection = _collection();
     if (collection == null) return;
@@ -160,6 +170,15 @@ class SavedScholarshipsService {
     await batch.commit();
   }
 
+  /// Resolves saved scholarships with a Firestore fallback for missing fields.
+  ///
+  /// The merged map also exposes the parent document's image under the
+  /// ``parentImage`` / ``parentImageUrl`` aliases so downstream widgets
+  /// (e.g. ``SavedScholarshipCard``) can prefer the latest parent
+  /// image over the snapshot captured at save time. The aliases are
+  /// only populated when the parent document actually carries an
+  /// image — never with empty strings — so the consumer's "no image"
+  /// guard remains authoritative.
   Stream<List<Map<String, dynamic>>> watchSavedScholarshipsWithFallback() =>
       watchSavedScholarships().asyncMap((savedItems) async {
         final resolved = <Map<String, dynamic>>[];
@@ -168,9 +187,21 @@ class SavedScholarshipsService {
               await _firestore.collection('scholarships').doc(savedItem.id).get(
                     const GetOptions(source: Source.serverAndCache),
                   );
+          final parentData = scholarshipDoc.data() ?? const <String, dynamic>{};
+          String? parentImage;
+          for (final key in const ['image', 'imageUrl']) {
+            final raw = parentData[key];
+            if (raw == null) continue;
+            final trimmed = raw.toString().trim();
+            if (trimmed.isNotEmpty) {
+              parentImage = trimmed;
+              break;
+            }
+          }
           resolved.add(<String, dynamic>{
             ...savedItem.data,
-            if (scholarshipDoc.data() != null) ...scholarshipDoc.data()!,
+            if (parentData.isNotEmpty) ...parentData,
+            if (parentImage != null) 'parentImage': parentImage,
             'id': savedItem.id,
             'savedAt': savedItem.data['savedAt'],
           });

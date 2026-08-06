@@ -1,6 +1,8 @@
+/// Banner that surfaces the current subscription state on the home screen.
 import 'package:flutter/material.dart';
 import '../models/subscription_model.dart';
 
+/// Displays upgrade or manage-subscription messaging for premium users.
 class PremiumBanner extends StatelessWidget {
   const PremiumBanner(
       {required this.subscription, required this.onTap, super.key});
@@ -24,6 +26,7 @@ class PremiumBanner extends StatelessWidget {
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(active ? 'ScholarBird Pro Activated' : 'Unlock ScholarBird Pro',
               style: const TextStyle(
+                  fontFamily: 'Roboto',
                   color: Colors.white,
                   fontSize: 16,
                   fontWeight: FontWeight.w700)),
@@ -32,7 +35,11 @@ class PremiumBanner extends StatelessWidget {
               active
                   ? 'Subscription active - ${subscription.daysRemaining} days remaining'
                   : 'Unlock scholarship applications and premium benefits.',
-              style: const TextStyle(color: Color(0xFFE2E8F0), fontSize: 12)),
+              style: const TextStyle(
+                  fontFamily: 'Roboto',
+                  color: Color(0xFFE2E8F0),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400)),
           const SizedBox(height: 10),
           Material(
               color: Colors.white,
@@ -45,6 +52,7 @@ class PremiumBanner extends StatelessWidget {
                           horizontal: 14, vertical: 8),
                       child: Text(active ? 'View Details' : 'Upgrade Now',
                           style: const TextStyle(
+                              fontFamily: 'Roboto',
                               color: Color(0xFF1E3A8A),
                               fontSize: 12,
                               fontWeight: FontWeight.w700)))))

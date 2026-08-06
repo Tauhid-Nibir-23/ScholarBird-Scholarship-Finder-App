@@ -1,7 +1,9 @@
+/// Splash screen that decides where the authenticated user should go next.
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/role_navigation.dart';
 
+/// Performs the initial authenticated-route check before navigation.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -36,11 +38,16 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _navigateToNextScreen() async {
-    await Future.delayed(const Duration(seconds: 3));
+    // Firebase restores persisted sessions asynchronously on app startup.
+    // Waiting for the first auth event prevents a restoring user from being
+    // sent back to onboarding after reopening the app.
+    final user = await FirebaseAuth.instance.authStateChanges().first.timeout(
+          const Duration(seconds: 8),
+          onTimeout: () => FirebaseAuth.instance.currentUser,
+        );
 
+    await Future.delayed(const Duration(milliseconds: 900));
     if (!mounted) return;
-
-    final user = FirebaseAuth.instance.currentUser;
 
     if (user != null) {
       final route = await RoleNavigation.routeForUser(user.uid);

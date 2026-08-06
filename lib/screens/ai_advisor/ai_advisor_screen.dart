@@ -1,3 +1,4 @@
+/// AI advisor screen that ranks scholarships against the user's profile.
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +10,7 @@ import '../../services/gemini_service.dart';
 import '../scholarship/scholarship_details.dart';
 import '../../widgets/saved_scholarship_controls.dart';
 
+/// Orchestrates profile loading, recommendation generation, and result display.
 class AIAdvisorScreen extends StatefulWidget {
   const AIAdvisorScreen({super.key, this.onMenuTap});
   final VoidCallback? onMenuTap;
@@ -145,6 +147,12 @@ class _AIAdvisorScreenState extends State<AIAdvisorScreen> {
                           textAlign: TextAlign.center,
                           style: TextStyle(
                               color: Color(0xFF6B7A95), fontSize: 13))),
+                const SizedBox(height: 14),
+                _SopGeneratorEntryCard(profile: profile),
+                const SizedBox(height: 12),
+                _ProfileAnalysisEntryCard(profile: profile),
+                const SizedBox(height: 12),
+                const _ChatEntryCard(),
                 if (_error != null) _ErrorState(message: _error!),
                 if (!_isLoading && _error == null && _recommendations.isEmpty)
                   const _AdvisorEmptyState(),
@@ -320,4 +328,203 @@ class _AdvisorMessage extends StatelessWidget {
       body: Center(
           child:
               Text(message, style: const TextStyle(color: Color(0xFF6B7A95)))));
+}
+
+/// Quick link into the SOP generator from the AI Advisor screen.
+class _SopGeneratorEntryCard extends StatelessWidget {
+  const _SopGeneratorEntryCard({required this.profile});
+  final UserProfile profile;
+
+  @override
+  Widget build(BuildContext context) {
+    final ready = profile.hasEnoughInformation;
+    return InkWell(
+      borderRadius: BorderRadius.circular(18),
+      onTap: () {
+        Navigator.of(context).pushNamed('/ai-hub/sop');
+      },
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFFE5E7EB)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8EDFF),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.edit_document,
+                  color: Color(0xFF5B7AE8), size: 22),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Statement of Purpose',
+                      style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF1A1A2E))),
+                  const SizedBox(height: 4),
+                  Text(
+                    ready
+                        ? 'Draft a tailored SOP using your profile, documents and references.'
+                        : 'Generate a draft SOP. Add more profile details to strengthen it.',
+                    style: const TextStyle(
+                        fontSize: 12, color: Color(0xFF6B7A95), height: 1.4),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.arrow_forward_ios,
+                size: 14, color: Color(0xFF9CA3AF)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Quick link into the profile analysis screen from the AI Advisor screen.
+class _ProfileAnalysisEntryCard extends StatelessWidget {
+  const _ProfileAnalysisEntryCard({required this.profile});
+  final UserProfile profile;
+
+  @override
+  Widget build(BuildContext context) {
+    final ready = profile.hasEnoughInformation;
+    return InkWell(
+      borderRadius: BorderRadius.circular(18),
+      onTap: () {
+        Navigator.of(context).pushNamed('/ai-hub/profile-analysis');
+      },
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFFE5E7EB)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8EDFF),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.insights_outlined,
+                  color: Color(0xFF5B7AE8), size: 22),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Profile Analysis',
+                      style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF1A1A2E))),
+                  const SizedBox(height: 4),
+                  Text(
+                    ready
+                        ? 'Get a qualitative readiness report on strengths, weaknesses, missing documents and best-fit scholarships.'
+                        : 'See how ready your profile is and what to improve. Add profile details to strengthen the report.',
+                    style: const TextStyle(
+                        fontSize: 12, color: Color(0xFF6B7A95), height: 1.4),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.arrow_forward_ios,
+                size: 14, color: Color(0xFF9CA3AF)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Quick link into the ScholarBird AI chat from the AI Advisor screen.
+class _ChatEntryCard extends StatelessWidget {
+  const _ChatEntryCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(18),
+      onTap: () {
+        Navigator.of(context).pushNamed('/ai-hub/chat');
+      },
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFFE5E7EB)),
+        ),
+        child: const Row(
+          children: [
+            _ChatIconBubble(),
+            SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Chat with ScholarBird AI',
+                      style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF1A1A2E))),
+                  SizedBox(height: 4),
+                  Text(
+                    'Get instant answers on scholarships, SOPs, visas, IELTS and study abroad.',
+                    style: TextStyle(
+                        fontSize: 12, color: Color(0xFF6B7A95), height: 1.4),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(width: 8),
+            Icon(Icons.arrow_forward_ios,
+                size: 14, color: Color(0xFF9CA3AF)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ChatIconBubble extends StatelessWidget {
+  const _ChatIconBubble();
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 42,
+      height: 42,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF5B7AE8), Color(0xFF7C9BFF)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Icon(
+        Icons.chat_bubble_outline_rounded,
+        color: Colors.white,
+        size: 22,
+      ),
+    );
+  }
 }

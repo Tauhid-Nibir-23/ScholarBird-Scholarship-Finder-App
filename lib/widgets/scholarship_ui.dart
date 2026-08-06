@@ -4,43 +4,109 @@ import 'package:flutter/material.dart';
 const sbBlue = Color(0xFF5B7AE8);
 const sbInk = Color(0xFF1A1A2E);
 
+/// Returns true when [value] is null, empty, or whitespace-only.
+///
+/// Centralises the "no image" guard so callers never have to remember
+/// to strip + null-check. Keeps the rule consistent across all
+/// ScholarshipImage consumers and prevents `CachedNetworkImage` from
+/// ever being constructed with an empty string URL.
+bool _isMissingImage(String? value) {
+  if (value == null) return true;
+  final trimmed = value.trim();
+  return trimmed.isEmpty;
+}
+
 class ScholarshipImage extends StatelessWidget {
   const ScholarshipImage(
-      {required this.url, required this.height, super.key, this.heroTag});
-  final String url;
+      {required this.url, required this.height, super.key, this.heroTag, this.country});
+  final String? url;
   final double height;
   final String? heroTag;
+  final String? country;
 
   @override
   Widget build(BuildContext context) {
-    final image = CachedNetworkImage(
-      imageUrl: url,
-      width: double.infinity,
-      height: height,
-      fit: BoxFit.cover,
-      fadeInDuration: const Duration(milliseconds: 220),
-      placeholder: (_, __) => const _ImagePlaceholder(),
-      errorWidget: (_, __, ___) => const _ImagePlaceholder(),
-    );
-    return SizedBox(
+    final hasImage = !_isMissingImage(url);
+    final clip = ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: SizedBox(
         height: height,
         width: double.infinity,
-        child: heroTag == null || url.isEmpty
-            ? image
-            : Hero(tag: heroTag!, child: image));
+        child: hasImage
+            ? CachedNetworkImage(
+                imageUrl: url!.trim(),
+                width: double.infinity,
+                height: height,
+                fit: BoxFit.cover,
+                fadeInDuration: const Duration(milliseconds: 220),
+                placeholder: (_, __) => const _ImagePlaceholder(),
+                errorWidget: (_, __, ___) => _AssetFallbackImage(country: country),
+              )
+            : _AssetFallbackImage(country: country),
+      ),
+    );
+    return heroTag == null || !hasImage
+        ? clip
+        : Hero(tag: heroTag!, child: clip);
   }
+}
+
+class _AssetFallbackImage extends StatelessWidget {
+  const _AssetFallbackImage({this.country});
+  final String? country;
+
+  String get _countryAsset {
+    final normalized = country?.trim().toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '_');
+    return 'assets/images/defaults/${normalized ?? ''}.jpg';
+  }
+
+  @override
+  Widget build(BuildContext context) => Image.asset(
+        _countryAsset,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Image.asset(
+          'assets/images/defaults/default.jpg',
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => const _ImagePlaceholder(),
+        ),
+      );
 }
 
 class _ImagePlaceholder extends StatelessWidget {
   const _ImagePlaceholder();
   @override
   Widget build(BuildContext context) => Container(
-        color: const Color(0xFFE8EDFF),
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFFE8EDFF), Color(0xFFF4F6FF)],
+          ),
+        ),
         alignment: Alignment.center,
-        child: const Icon(Icons.school_outlined,
-            color: sbBlue,
-            size: 42,
-            semanticLabel: 'Scholarship image placeholder'),
+        child: Container(
+          width: 64,
+          height: 64,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.85),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: sbBlue.withValues(alpha: 0.08),
+                blurRadius: 18,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          alignment: Alignment.center,
+          child: const Icon(Icons.image_outlined,
+              color: sbBlue,
+              size: 32,
+              semanticLabel: 'Scholarship image placeholder'),
+        ),
       );
 }
 

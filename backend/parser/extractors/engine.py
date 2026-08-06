@@ -217,7 +217,7 @@ class FieldExtractor:
         page: FetchedPage,
         *,
         fetcher: Optional[object] = None,
-        validate_images: bool = True,
+        validate_images: bool = False,
     ) -> ExtractedFields:
         """Run every extractor and return a populated result.
 
@@ -283,8 +283,25 @@ class FieldExtractor:
         result.provider = self._pick_provider()
         result.university = self.university.host
 
-        # 4. Image priority order: JSON-LD → OG → Twitter → inline hero → img.
-        result.image = self.images.best
+        # 4. Image priority order: JSON-LD → OG → Twitter → inline hero / img.
+        # NOTE: ``metadata.image`` (the standard ``<meta name="image">`` slot)
+        # is intentionally demoted below the ranked ``images.candidates``
+        # fallback. Pages that ship a generic logo / avatar in that slot
+        # would otherwise win over a real hero photo surfaced by the
+        # feather-weight image extractor.
+        result.image = (
+            self.jsonld.nodes[0].image
+            if self.jsonld.nodes and self.jsonld.nodes[0].image
+            else None
+        )
+        if not result.image and self.og.image:
+            result.image = self.og.image[0]
+        if not result.image and self.og.twitter_image:
+            result.image = self.og.twitter_image[0]
+        if not result.image and self.images.candidates:
+            result.image = self.images.candidates[0]
+        if not result.image and self.metadata.image:
+            result.image = self.metadata.image
         result.imageCandidates = list(self.images.candidates)
 
         # 5. Country fallback.
@@ -432,7 +449,7 @@ def extract_fields_from_html(
     *,
     existing: Optional[MutableMapping[str, Any]] = None,
     fetcher: Optional[object] = None,
-    validate_images: bool = True,
+    validate_images: bool = False,
 ) -> ExtractedFields:
     """Parse ``html`` and return canonical fields.
 
