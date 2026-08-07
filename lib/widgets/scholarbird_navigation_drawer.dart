@@ -12,6 +12,7 @@ class ScholarBirdNavigationDrawer extends StatelessWidget {
     required this.selectedIndex,
     required this.onTabSelected,
     required this.onSaved,
+    required this.onMyApplications,
     required this.onNotifications,
     required this.onPremium,
     required this.onMentorHub,
@@ -22,6 +23,7 @@ class ScholarBirdNavigationDrawer extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onTabSelected;
   final VoidCallback onSaved;
+  final VoidCallback onMyApplications;
   final VoidCallback onNotifications;
   final VoidCallback onPremium;
   final VoidCallback onMentorHub;
@@ -34,9 +36,10 @@ class ScholarBirdNavigationDrawer extends StatelessWidget {
           Navigator.of(context).pop();
           onTabSelected(switch (index) {
             0 => 0,
-            1 || 2 => 1,
-            3 => 2,
-            _ => 3,
+            1 => 1,
+            2 => 2,
+            3 => 3,
+            _ => 4,
           });
         },
         backgroundColor: Theme.of(context).colorScheme.surface,
@@ -45,12 +48,13 @@ class ScholarBirdNavigationDrawer extends StatelessWidget {
         children: [
           _DrawerProfileHeader(onPremium: onPremium),
           _destination(Icons.home_outlined, 'Home'),
-          _destination(Icons.search_outlined, 'Search Scholarships'),
           _destination(Icons.school_outlined, 'All Scholarships'),
-          _destination(Icons.auto_awesome_outlined, 'Recommended For You'),
+          _destination(Icons.auto_awesome_outlined, 'AI Advisor'),
+          _destination(Icons.groups_outlined, 'Community'),
           _action(
               context, Icons.favorite_border, 'Saved Scholarships', onSaved),
-          _destination(Icons.assignment_outlined, 'My Applications'),
+          _action(context, Icons.assignment_outlined, 'My Applications',
+              onMyApplications),
           _action(context, Icons.notifications_none_outlined, 'Notifications',
               onNotifications),
           _action(context, Icons.workspace_premium_outlined, 'Premium', onPremium),
@@ -77,8 +81,8 @@ class ScholarBirdNavigationDrawer extends StatelessWidget {
   int? get _selectedDestinationIndex => switch (selectedIndex) {
         0 => 0,
         1 => 1,
-        2 => 3,
-        3 => 4,
+        2 => 2,
+        3 => 3,
         _ => null,
       };
 

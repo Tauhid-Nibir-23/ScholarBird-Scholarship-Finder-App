@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'edit_profile.dart';
 import 'academic_profile_screen.dart';
 import 'scholarship_preferences_screen.dart';
+import '../applications/my_applications.dart';
 import 'saved_scholarships_screen.dart';
 import 'notifications_screen.dart';
 import 'profile_widgets.dart';
@@ -267,6 +268,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   MaterialPageRoute(
                                     builder: (_) =>
                                         const ScholarshipPreferencesScreen(),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              ProfileMenuTile(
+                                icon: Icons.assignment_outlined,
+                                title: 'My Applications',
+                                onTap: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        const MyApplicationsScreen(),
                                   ),
                                 ),
                               ),

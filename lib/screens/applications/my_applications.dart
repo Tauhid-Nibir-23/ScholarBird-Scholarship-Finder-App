@@ -20,9 +20,13 @@ class MyApplicationsScreen extends StatelessWidget {
         toolbarHeight: 72,
         shape: const Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
         leading: IconButton(
-          tooltip: 'Open navigation menu',
-          onPressed: onMenuTap,
-          icon: const Icon(Icons.menu_rounded),
+          tooltip: 'Back',
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            }
+          },
+          icon: const Icon(Icons.arrow_back_rounded),
         ),
         centerTitle: true,
         title: const Text(
