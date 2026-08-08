@@ -1,9 +1,11 @@
-/// Sample mentor fixtures used by the Mentor Hub UI.
+/// Sample reference fixtures used by the Reference Point UI.
 ///
 /// This file is intentionally pure-data: it exposes a [sampleMentors] list
 /// that the screen consumes directly. Replacing it with a Firestore-backed
 /// repository later is a one-line swap in the screen — the UI is wired
 /// against the [Mentor] model, not against this constant.
+///
+/// Note: branded as "Reference Point" in the UI (formerly "Mentor Hub").
 import '../models/mentor.dart';
 
 /// Mock data spanning every department in the filter chip row.

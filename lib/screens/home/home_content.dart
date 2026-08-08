@@ -9,7 +9,8 @@ import '../profile/saved_scholarships_screen.dart';
 import '../scholarship/scholarship_details.dart';
 import '../premium/manage_subscription_screen.dart';
 import '../premium/premium_upgrade_screen.dart';
-import '../mentor/mentor_hub_screen.dart';
+import '../mentor/mentor_hub_screen.dart' as reference_point;
+import '../mentor_hub/mentor_hub_screen.dart' as mentor_marketplace;
 import '../../widgets/premium_banner.dart';
 import '../../widgets/premium_guard.dart';
 import '../../services/pdf_service.dart';
@@ -1107,10 +1108,11 @@ class _QuickServicesGrid extends StatelessWidget {
         accent: AppColors.accentSky,
       ),
       _ServiceTileData(
-        title: 'Pro',
-        subtitle: 'Premium services',
-        description: 'Premium add-ons and concierge support.',
-        icon: Icons.workspace_premium_rounded,
+        title: 'Reference Point',
+        subtitle: 'Faculty directory',
+        description:
+            'Browse professors for research, internships, and references.',
+        icon: Icons.menu_book_rounded,
         accent: AppColors.accentAmber,
       ),
       _ServiceTileData(
@@ -1166,7 +1168,9 @@ class _QuickServicesGrid extends StatelessWidget {
     switch (service.title) {
       case 'Mentoring':
         Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const MentorHubScreen()),
+          MaterialPageRoute(
+            builder: (_) => const mentor_marketplace.MentorHubScreen(),
+          ),
         );
         break;
       case 'SOP':
@@ -1175,12 +1179,10 @@ class _QuickServicesGrid extends StatelessWidget {
       case 'Consultation':
         _openWhatsApp(context);
         break;
-      case 'Pro':
-        // Reserved: no-op for now.
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Pro services coming soon.'),
-            duration: Duration(milliseconds: 1400),
+      case 'Reference Point':
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => const reference_point.MentorHubScreen(),
           ),
         );
         break;

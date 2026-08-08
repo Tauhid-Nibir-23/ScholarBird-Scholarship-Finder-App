@@ -16,6 +16,7 @@ class ScholarBirdNavigationDrawer extends StatelessWidget {
     required this.onNotifications,
     required this.onPremium,
     required this.onMentorHub,
+    required this.onMentorMarketplace,
     required this.onLogout,
     super.key,
   });
@@ -26,7 +27,12 @@ class ScholarBirdNavigationDrawer extends StatelessWidget {
   final VoidCallback onMyApplications;
   final VoidCallback onNotifications;
   final VoidCallback onPremium;
+
+  /// Opens the legacy faculty-reference directory ("Reference Point").
   final VoidCallback onMentorHub;
+
+  /// Opens the new paid mentor marketplace ("Mentor Hub").
+  final VoidCallback onMentorMarketplace;
   final VoidCallback onLogout;
 
   @override
@@ -58,7 +64,9 @@ class ScholarBirdNavigationDrawer extends StatelessWidget {
           _action(context, Icons.notifications_none_outlined, 'Notifications',
               onNotifications),
           _action(context, Icons.workspace_premium_outlined, 'Premium', onPremium),
-          _action(context, Icons.school_outlined, 'Mentor Hub', onMentorHub),
+          _action(context, Icons.workspace_premium_outlined, 'Mentor Hub',
+              onMentorMarketplace),
+          _action(context, Icons.school_outlined, 'Reference Point', onMentorHub),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 28, vertical: 10),
             child: Divider(height: 1),

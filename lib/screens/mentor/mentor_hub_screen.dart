@@ -1,12 +1,19 @@
-/// Mentor Hub — searchable faculty directory reachable from the navigation
+/// Reference Point â€” searchable faculty directory reachable from the navigation
 /// drawer. The screen deliberately depends on the [Mentor] model only, so the
 /// underlying data source can move from the bundled `sampleMentors` list to a
 /// Firestore collection without UI changes.
+///
+/// Note: this is the *Reference Point* feature (formerly branded as
+/// "Mentor Hub"). It surfaces professors' contact information for research
+/// opportunities, internships, scholarships, and references — not paid
+/// mentors. The paid mentor marketplace is its own screen at
+/// `lib/screens/mentor_hub/mentor_hub_screen.dart`.
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../../data/sample_mentors.dart';
 import '../../models/mentor.dart';
+import '../../services/firestore_collections.dart';
 import '../../theme/scholarbird_theme.dart';
 import '../../widgets/mentor_card.dart';
 
@@ -23,13 +30,13 @@ class _MentorHubScreenState extends State<MentorHubScreen> {
   String _query = '';
   MentorDepartment _filter = MentorDepartment.all;
 
-  /// Firestore mentors merged with the bundled [sampleMentors]. When the
-  /// admin panel has created any mentor in Firestore it shadows the sample
-  /// entry with the same `id`; everything else remains for offline / first-
-  /// launch fallback.
+/// Firestore Reference Point entries merged with the bundled
+  /// [sampleMentors]. When the admin panel has created any reference
+  /// entry in Firestore it shadows the sample entry with the same `id`;
+  /// everything else remains for offline / first-launch fallback.
   Stream<List<Mentor>> _streamMergedMentors() {
     return FirebaseFirestore.instance
-        .collection('mentors')
+        .collection(kCollectionReferencePoints)
         .snapshots()
         .map((snapshot) {
       final byId = <String, Mentor>{
@@ -76,7 +83,7 @@ class _MentorHubScreenState extends State<MentorHubScreen> {
         backgroundColor: isDark ? scheme.surface : Colors.white,
         foregroundColor: ScholarBirdColors.ink,
         title: const Text(
-          'Mentor Hub',
+          'Reference Point',
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
         ),
       ),
@@ -364,7 +371,7 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: ScholarBirdSpacing.medium),
             const Text(
-              'No mentors found',
+              'No references found',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,

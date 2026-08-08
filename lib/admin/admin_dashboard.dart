@@ -8,6 +8,7 @@ import 'analytics_page.dart';
 import 'application_page.dart';
 import 'dashboard_page.dart';
 import 'mentor_admin_screen.dart';
+import 'mentor_management_screen.dart';
 import 'notifications_page.dart';
 import 'scholarship_page.dart';
 import 'settings_page.dart';
@@ -39,7 +40,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
       Icons.school,
     ),
     _AdminDestination('Users', Icons.people_outline, Icons.people),
-    _AdminDestination('Mentors', Icons.person_outline, Icons.person),
+    _AdminDestination(
+      'Reference Points',
+      Icons.person_outline,
+      Icons.person,
+    ),
+    _AdminDestination(
+      'Mentor Marketplace',
+      Icons.workspace_premium_outlined,
+      Icons.workspace_premium,
+    ),
     _AdminDestination(
       'Applications',
       Icons.description_outlined,
@@ -79,6 +89,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
         ScholarshipPage(),
         UsersPage(),
         MentorAdminScreen(),
+        MentorManagementScreen(),
         ApplicationPage(),
         NotificationsPage(),
         AnalyticsPage(),

@@ -10,6 +10,7 @@ import '../ai_advisor/ai_advisor_screen.dart';
 import '../premium/premium_upgrade_screen.dart';
 import '../../widgets/scholarbird_navigation_drawer.dart';
 import '../mentor/mentor_hub_screen.dart';
+import '../mentor_hub/mentor_hub_screen.dart' as mentor_marketplace;
 import '../../theme/app_theme.dart';
 import 'home_content.dart';
 
@@ -62,6 +63,8 @@ class _HomeScreenState extends State<HomeScreen> {
           onNotifications: () => _push(const NotificationsScreen()),
           onPremium: () => _push(const PremiumUpgradeScreen()),
           onMentorHub: () => _push(const MentorHubScreen()),
+          onMentorMarketplace: () =>
+              _push(const mentor_marketplace.MentorHubScreen()),
           onLogout: _logout,
         ),
         appBar: _buildAppBar(),

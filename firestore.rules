@@ -51,10 +51,58 @@ service cloud.firestore {
       }
     }
 
-    match /mentors/{mentorId} {
+    // Reference Points — public directory of professors, researchers,
+    // labs and universities. Read-only for signed-in users, admin-only writes.
+    match /reference_points/{referencePointId} {
       allow read: if signedIn();
       allow create, update, delete: if isAdmin();
     }
+
+    // Mentor Marketplace — paid mentor profiles, packages, bookings, reviews.
+    // Public read for the directory pages; writes scoped to admins or to the
+    // owning student/mentor (see nested match blocks).
+    match /mentors_marketplace/{mentorId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isAdmin();
+    }
+    match /mentor_packages/{packageId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isAdmin();
+    }
+    match /mentor_bookings/{bookingId} {
+      // MentorBooking.toMap() writes `userId` (the student who created the
+      // booking) and `mentorId` (the mentor being booked). Accept the legacy
+      // `studentId` field too so older documents keep working.
+      allow read: if signedIn() && (
+        resource.data.userId == request.auth.uid ||
+        resource.data.studentId == request.auth.uid ||
+        resource.data.mentorId == request.auth.uid ||
+        isAdmin()
+      );
+      allow create: if signedIn() &&
+        (request.resource.data.userId == request.auth.uid ||
+         request.resource.data.studentId == request.auth.uid);
+      allow update: if isAdmin() ||
+        (signedIn() && (
+          resource.data.userId == request.auth.uid ||
+          resource.data.studentId == request.auth.uid
+        ));
+      allow delete: if isAdmin();
+    }
+    match /mentor_reviews/{reviewId} {
+      // MentorReview.toMap() writes `userId` (the student who submitted the
+      // review). Accept the legacy `studentId` field too for older documents.
+      allow read: if signedIn();
+      allow create: if signedIn() &&
+        (request.resource.data.userId == request.auth.uid ||
+         request.resource.data.studentId == request.auth.uid);
+      allow update, delete: if isAdmin() ||
+        (signedIn() && (
+          resource.data.userId == request.auth.uid ||
+          resource.data.studentId == request.auth.uid
+        ));
+    }
+
     match /notifications/{notificationId} {
       allow read: if signedIn();
       allow create, update, delete: if isAdmin();

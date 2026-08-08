@@ -115,27 +115,59 @@ class AdminSectionTitle extends StatelessWidget {
 
 /// Circular admin avatar used for headings and identity placeholders.
 class AdminAvatar extends StatelessWidget {
-  const AdminAvatar({required this.name, super.key, this.radius = 20});
+  const AdminAvatar({
+    required this.name,
+    super.key,
+    this.radius = 20,
+    this.photoUrl,
+  });
 
   final String name;
   final double radius;
 
+  /// Optional public URL of the avatar image. When provided and
+  /// non-empty the network image is shown; otherwise (or if it fails
+  /// to load) the widget falls back to the first letter of [name].
+  final String? photoUrl;
+
   @override
-  Widget build(BuildContext context) => Container(
-        width: radius * 2,
-        height: radius * 2,
-        alignment: Alignment.center,
-        decoration: const BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: LinearGradient(
-              colors: [AdminPalette.primary, AdminPalette.primaryDark]),
-        ),
-        child: Text(
-          name.trim().isEmpty ? '?' : name.trim().substring(0, 1).toUpperCase(),
-          style: TextStyle(
-              color: Colors.white,
-              fontSize: radius * .8,
-              fontWeight: FontWeight.w700),
+  Widget build(BuildContext context) {
+    final size = radius * 2;
+    final hasPhoto = photoUrl != null && photoUrl!.isNotEmpty;
+    return Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: hasPhoto
+            ? null
+            : const LinearGradient(
+                colors: [AdminPalette.primary, AdminPalette.primaryDark],
+              ),
+        color: hasPhoto ? AdminPalette.primary.withValues(alpha: 0.12) : null,
+      ),
+      child: hasPhoto
+          ? Image.network(
+              photoUrl!,
+              width: size,
+              height: size,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => _letter(),
+              loadingBuilder: (ctx, child, progress) =>
+                  progress == null ? child : _letter(),
+            )
+          : _letter(),
+    );
+  }
+
+  Widget _letter() => Text(
+        name.trim().isEmpty ? '?' : name.trim().substring(0, 1).toUpperCase(),
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: radius * .8,
+          fontWeight: FontWeight.w700,
         ),
       );
 }

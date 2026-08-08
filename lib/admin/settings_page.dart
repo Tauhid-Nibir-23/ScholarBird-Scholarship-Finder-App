@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../services/firestore_collections.dart';
 import '../services/supabase_config.dart';
 import 'admin_ui.dart';
 import 'widgets/admin_badge.dart';
@@ -278,8 +279,12 @@ class _StoragePanel extends StatelessWidget {
               collections: ['users'],
             ),
             _CollectionCountRow(
-              label: 'Mentors',
-              collections: ['mentors'],
+              label: 'Reference points',
+              collections: [kCollectionReferencePoints],
+            ),
+            _CollectionCountRow(
+              label: 'Mentor marketplace',
+              collections: [kCollectionMentorsMarketplace],
             ),
             _CollectionCountRow(
               label: 'Activity logs',

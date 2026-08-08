@@ -1,4 +1,5 @@
-/// Reusable mentor card used by the Mentor Hub screen.
+/// Reusable reference card used by the Reference Point screen
+/// (formerly branded as the "Mentor Hub").
 ///
 /// Visuals follow the ScholarBird style: white surface, 12px radius, thin
 /// `#E5E7EB` border, soft shadow, gradient avatar fallback when the mentor

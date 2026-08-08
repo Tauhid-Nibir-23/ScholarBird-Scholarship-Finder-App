@@ -1,4 +1,10 @@
-/// Domain model for a faculty mentor surfaced in the Mentor Hub.
+/// Domain model for a **Reference Point** entry surfaced in the
+/// Mentor Hub directory.
+///
+/// A Reference Point is a professor, researcher, lab or university that
+/// students can browse for funding / internship / research contacts.
+/// This is **not** the Mentor Hub marketplace model — that lives in
+/// `mentor_profile.dart` and uses the `mentors_marketplace` collection.
 ///
 /// Designed to be Firestore-friendly: every field is optional where it makes
 /// sense, and a `fromMap` factory is provided so the same shape can be

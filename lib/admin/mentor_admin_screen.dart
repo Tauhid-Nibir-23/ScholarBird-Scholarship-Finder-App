@@ -1,11 +1,16 @@
-/// Admin screen for managing mentors.
+/// Admin screen for managing the **Reference Point** directory
+/// (professors, researchers, labs, universities).
 ///
-/// Streams mentors from the Firestore `mentors` collection, supports
-/// free-text search across name / designation / university / research
-/// interests, department filtering, sort by name / department /
-/// availability, and full CRUD through [_MentorFormScreen].
+/// Streams records from the Firestore `reference_points` collection.
+/// Previously this lived in the `mentors` collection; the rename was
+/// performed to keep the Reference Point (free directory) and the
+/// Mentor Hub (paid marketplace) fully independent.
 ///
-/// Tapping a mentor opens the form for edit/delete; the floating
+/// Supports free-text search across name / designation / university /
+/// research interests, department filtering, sort by name / department /
+/// availability, and full CRUD through [MentorFormScreen].
+///
+/// Tapping a record opens the form for edit/delete; the floating
 /// action button opens it for create.
 library;
 
@@ -14,6 +19,7 @@ import 'package:flutter/material.dart';
 
 import '../models/mentor.dart';
 import '../data/sample_mentors.dart';
+import '../services/firestore_collections.dart';
 import '../theme/scholarbird_theme.dart';
 import 'admin_ui.dart';
 import 'mentor_admin_form.dart';
@@ -91,31 +97,38 @@ class _MentorAdminScreenState extends State<MentorAdminScreen> {
   Future<void> _deleteMentor(BuildContext context, Mentor mentor) async {
     final confirmed = await AdminDialogs.confirm(
       context: context,
-      title: 'Delete mentor?',
+      title: 'Delete reference entry?',
       message:
-          'This removes ${mentor.name.isEmpty ? "this mentor" : mentor.name} from Firestore. The portrait in Supabase Storage will also be deleted.',
+          'This removes ${mentor.name.isEmpty ? "this entry" : mentor.name} from the Reference Point directory. The portrait in Supabase Storage will also be deleted.',
       confirmLabel: 'Delete',
     );
     if (!confirmed) return;
     try {
-      await _firestore.collection('mentors').doc(mentor.id).delete();
+      await _firestore
+          .collection(kCollectionReferencePoints)
+          .doc(mentor.id)
+          .delete();
       if (mounted) {
-        AdminDialogs.success(context, 'Mentor deleted');
+        AdminDialogs.success(context, 'Reference entry deleted');
       }
     } catch (e) {
       if (mounted) {
-        AdminDialogs.error(context, 'Could not delete mentor: $e');
+        AdminDialogs.error(context, 'Could not delete entry: $e');
       }
     }
   }
 
-  /// One-time migration for the mentors that originally shipped only as local
-  /// Mentor Hub fixtures. Existing Firestore documents are never overwritten.
+  /// One-time migration for the reference fixtures that originally shipped
+  /// only as local Mentor Hub (Reference Point) data. Existing Firestore
+  /// documents are never overwritten. Writes go to the new
+  /// `reference_points` collection.
   Future<void> _importBuiltInMentors(BuildContext context) async {
     try {
       final batch = _firestore.batch();
       for (final mentor in sampleMentors) {
-        final ref = _firestore.collection('mentors').doc(mentor.id);
+        final ref = _firestore
+            .collection(kCollectionReferencePoints)
+            .doc(mentor.id);
         final existing = await ref.get();
         if (existing.exists) continue;
         batch.set(ref, {
@@ -138,10 +151,13 @@ class _MentorAdminScreenState extends State<MentorAdminScreen> {
       }
       await batch.commit();
       if (mounted) {
-        AdminDialogs.success(context, '${sampleMentors.length} built-in mentors imported');
+        AdminDialogs.success(context,
+            '${sampleMentors.length} reference entries imported');
       }
     } catch (e) {
-      if (mounted) AdminDialogs.error(context, 'Could not import mentors: $e');
+      if (mounted) {
+        AdminDialogs.error(context, 'Could not import reference entries: $e');
+      }
     }
   }
 
@@ -181,18 +197,20 @@ class _MentorAdminScreenState extends State<MentorAdminScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openForm(context),
         icon: const Icon(Icons.add),
-        label: const Text('Add mentor'),
+        label: const Text('Add reference'),
         backgroundColor: AdminPalette.primary,
         foregroundColor: Colors.white,
       ),
       body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-        stream: _firestore.collection('mentors').snapshots(),
+        stream: _firestore
+            .collection(kCollectionReferencePoints)
+            .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(ScholarBirdSpacing.large),
-                child: Text('Could not load mentors: ${snapshot.error}'),
+                child: Text('Could not load reference points: ${snapshot.error}'),
               ),
             );
           }
@@ -220,14 +238,14 @@ class _MentorAdminScreenState extends State<MentorAdminScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 AdminPageHeader(
-                  title: 'Mentors',
+                  title: 'Reference Points',
                   subtitle:
-                      'Manage faculty mentors that surface in the Mentor Hub.',
+                      'Manage the professor and research directory surfaced in the Reference Point feature. Paid mentors live in Mentor Marketplace.',
                   actions: [
                     FilledButton.icon(
                       onPressed: () => _openForm(context),
                       icon: const Icon(Icons.person_add_alt_1),
-                      label: const Text('New mentor'),
+                      label: const Text('New reference'),
                       style: FilledButton.styleFrom(
                         backgroundColor: AdminPalette.primary,
                         foregroundColor: Colors.white,
@@ -237,9 +255,9 @@ class _MentorAdminScreenState extends State<MentorAdminScreen> {
                 ),
                 const SizedBox(height: 20),
                 AdminSection(
-                  title: 'Mentor directory',
+                  title: 'Reference Point directory',
                   subtitle:
-                      '${filtered.length} of ${mentors.length} mentors shown',
+                      '${filtered.length} of ${mentors.length} entries shown',
                   icon: Icons.school_outlined,
                   action: PopupMenuButton<_MentorSort>(
                     tooltip: 'Sort',
@@ -301,16 +319,16 @@ class _MentorAdminScreenState extends State<MentorAdminScreen> {
                         AdminEmptyState(
                           icon: Icons.person_search_outlined,
                           title: mentors.isEmpty
-                              ? 'No mentors in Firestore yet'
-                              : 'No mentors match the filters',
+                              ? 'No reference points in Firestore yet'
+                              : 'No reference points match the filters',
                           message: mentors.isEmpty
-                              ? 'Tap "New mentor" to create the first one.'
+                              ? 'Tap "New reference" to create the first one.'
                               : 'Try clearing the search or department filter.',
                           action: mentors.isEmpty
                               ? FilledButton.icon(
                                   onPressed: () => _importBuiltInMentors(context),
                                   icon: const Icon(Icons.cloud_upload_outlined),
-                                  label: const Text('Import built-in mentors'),
+                                  label: const Text('Import built-in references'),
                                 )
                               : null,
                         )

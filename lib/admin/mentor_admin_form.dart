@@ -1,18 +1,23 @@
-/// Add / edit form for a single mentor in the admin panel.
+/// Add / edit form for a single **Reference Point** entry in the admin panel.
+///
+/// Reference Point stores professors, researchers, labs and universities in
+/// the Firestore `reference_points` collection. This screen does not touch
+/// the `mentors_marketplace` collection used by the Mentor Hub.
 ///
 /// When [mentor] is null the form is in "create" mode and the page
 /// generates a fresh doc id on save. Otherwise it edits the existing
 /// Firestore document in place.
 ///
 /// Photo upload goes through [MentorImageService] → Supabase Storage
-/// `mentor-images/{mentorId}.jpg`. The public URL is written back into
-/// the mentor document in the same transaction.
+/// `reference-points/{entryId}.jpg`. The public URL is written back into
+/// the reference document in the same transaction.
 library;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../models/mentor.dart';
+import '../services/firestore_collections.dart';
 import '../services/mentor_image_service.dart';
 import '../theme/scholarbird_theme.dart';
 import 'admin_ui.dart';
@@ -22,7 +27,8 @@ import 'widgets/admin_image_upload.dart';
 class MentorFormScreen extends StatefulWidget {
   const MentorFormScreen({super.key, this.mentor});
 
-  /// Existing mentor (edit mode). `null` → create a new mentor.
+  /// Existing reference entry (edit mode). `null` → create a new
+  /// reference point in the `reference_points` collection.
   final Mentor? mentor;
 
   @override
@@ -59,7 +65,7 @@ class _MentorFormScreenState extends State<MentorFormScreen> {
     super.initState();
     final mentor = widget.mentor;
     _isNew = mentor == null;
-    _docId = mentor?.id ?? _firestore.collection('mentors').doc().id;
+    _docId = mentor?.id ?? _firestore.collection(kCollectionReferencePoints).doc().id;
 
     _name = TextEditingController(text: mentor?.name ?? '');
     _designation = TextEditingController(text: mentor?.designation ?? '');
@@ -119,11 +125,11 @@ class _MentorFormScreenState extends State<MentorFormScreen> {
         'photoUrl': _photoUrl,
       };
       await _firestore
-          .collection('mentors')
+          .collection(kCollectionReferencePoints)
           .doc(_docId)
           .set(data, SetOptions(merge: true));
       if (!mounted) return;
-      AdminDialogs.success(context, _isNew ? 'Mentor added' : 'Mentor updated');
+      AdminDialogs.success(context, _isNew ? 'Reference added' : 'Reference updated');
       Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
@@ -136,18 +142,18 @@ class _MentorFormScreenState extends State<MentorFormScreen> {
   Future<void> _delete() async {
     final confirmed = await AdminDialogs.confirm(
       context: context,
-      title: 'Delete mentor?',
+      title: 'Delete reference entry?',
       message:
-          'This will remove the mentor from Firestore. The portrait in Supabase Storage will also be deleted.',
+          'This will remove the reference (professor/researcher/lab) from Firestore. The portrait in Supabase Storage will also be deleted.',
       confirmLabel: 'Delete',
     );
     if (!confirmed) return;
     setState(() => _saving = true);
     try {
       await MentorImageService.instance.removeMentorImage(_docId);
-      await _firestore.collection('mentors').doc(_docId).delete();
+      await _firestore.collection(kCollectionReferencePoints).doc(_docId).delete();
       if (!mounted) return;
-      AdminDialogs.success(context, 'Mentor deleted');
+      AdminDialogs.success(context, 'Reference entry deleted');
       Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
@@ -165,13 +171,13 @@ class _MentorFormScreenState extends State<MentorFormScreen> {
           ? Theme.of(context).colorScheme.surface
           : Colors.white,
       appBar: AppBar(
-        title: Text(_isNew ? 'Add mentor' : 'Edit mentor'),
+        title: Text(_isNew ? 'Add reference' : 'Edit reference'),
         actions: [
           if (!_isNew)
             IconButton(
               onPressed: _saving ? null : _delete,
               icon: const Icon(Icons.delete_outline),
-              tooltip: 'Delete mentor',
+              tooltip: 'Delete reference entry',
             ),
         ],
       ),
@@ -357,7 +363,7 @@ class _MentorFormScreenState extends State<MentorFormScreen> {
                         ),
                       )
                     : const Icon(Icons.save_outlined),
-                label: Text(_isNew ? 'Add mentor' : 'Save changes'),
+                label: Text(_isNew ? 'Add reference' : 'Save changes'),
                 style: FilledButton.styleFrom(
                   backgroundColor: AdminPalette.primary,
                   foregroundColor: Colors.white,

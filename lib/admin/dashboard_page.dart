@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
+import '../services/firestore_collections.dart';
 import 'admin_ui.dart';
 import 'add_scholarship_page.dart';
 import 'widgets/admin_badge.dart';
@@ -145,63 +146,80 @@ class _DashboardStats extends StatelessWidget {
                 .length;
 
             return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-              stream:
-                  FirebaseFirestore.instance.collection('mentors').snapshots(),
-              builder: (context, mentorsSnap) {
-                final mentorCount = mentorsSnap.data?.docs.length ?? 0;
-                return AdminStatGrid(
-                  children: [
-                    AdminStatCard(
-                      label: 'Total scholarships',
-                      value: scholarships.length.toString(),
-                      icon: Icons.school_outlined,
-                      trend: '${activeCount} active',
-                    ),
-                    AdminStatCard(
-                      label: 'Active scholarships',
-                      value: activeCount.toString(),
-                      icon: Icons.verified_outlined,
-                      iconColor: const Color(0xFF16A34A),
-                    ),
-                    AdminStatCard(
-                      label: 'Expired scholarships',
-                      value: expiredCount.toString(),
-                      icon: Icons.history,
-                      iconColor: const Color(0xFFDC2626),
-                    ),
-                    AdminStatCard(
-                      label: 'Applications',
-                      value: applications.length.toString(),
-                      icon: Icons.description_outlined,
-                      trend: '$pendingCount pending',
-                      iconColor: const Color(0xFFD97706),
-                    ),
-                    AdminStatCard(
-                      label: 'Approved applications',
-                      value: approvedCount.toString(),
-                      icon: Icons.check_circle_outline,
-                      iconColor: const Color(0xFF16A34A),
-                    ),
-                    AdminStatCard(
-                      label: 'Registered users',
-                      value: users.length.toString(),
-                      icon: Icons.people_outline,
-                      trend: '$premiumCount premium',
-                      iconColor: const Color(0xFF2563EB),
-                    ),
-                    AdminStatCard(
-                      label: 'Premium users',
-                      value: premiumCount.toString(),
-                      icon: Icons.workspace_premium,
-                      iconColor: const Color(0xFFCA8A04),
-                    ),
-                    AdminStatCard(
-                      label: 'Mentors',
-                      value: mentorCount.toString(),
-                      icon: Icons.person_outline,
-                      iconColor: const Color(0xFF7C3AED),
-                    ),
-                  ],
+              stream: FirebaseFirestore.instance
+                  .collection(kCollectionReferencePoints)
+                  .snapshots(),
+              builder: (context, referencePointsSnap) {
+                final referencePointsCount =
+                    referencePointsSnap.data?.docs.length ?? 0;
+                return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                  stream: FirebaseFirestore.instance
+                      .collection(kCollectionMentorsMarketplace)
+                      .snapshots(),
+                  builder: (context, marketplaceSnap) {
+                    final marketplaceCount =
+                        marketplaceSnap.data?.docs.length ?? 0;
+                    return AdminStatGrid(
+                      children: [
+                        AdminStatCard(
+                          label: 'Total scholarships',
+                          value: scholarships.length.toString(),
+                          icon: Icons.school_outlined,
+                          trend: '${activeCount} active',
+                        ),
+                        AdminStatCard(
+                          label: 'Active scholarships',
+                          value: activeCount.toString(),
+                          icon: Icons.verified_outlined,
+                          iconColor: const Color(0xFF16A34A),
+                        ),
+                        AdminStatCard(
+                          label: 'Expired scholarships',
+                          value: expiredCount.toString(),
+                          icon: Icons.history,
+                          iconColor: const Color(0xFFDC2626),
+                        ),
+                        AdminStatCard(
+                          label: 'Applications',
+                          value: applications.length.toString(),
+                          icon: Icons.description_outlined,
+                          trend: '$pendingCount pending',
+                          iconColor: const Color(0xFFD97706),
+                        ),
+                        AdminStatCard(
+                          label: 'Approved applications',
+                          value: approvedCount.toString(),
+                          icon: Icons.check_circle_outline,
+                          iconColor: const Color(0xFF16A34A),
+                        ),
+                        AdminStatCard(
+                          label: 'Registered users',
+                          value: users.length.toString(),
+                          icon: Icons.people_outline,
+                          trend: '$premiumCount premium',
+                          iconColor: const Color(0xFF2563EB),
+                        ),
+                        AdminStatCard(
+                          label: 'Premium users',
+                          value: premiumCount.toString(),
+                          icon: Icons.workspace_premium,
+                          iconColor: const Color(0xFFCA8A04),
+                        ),
+                        AdminStatCard(
+                          label: 'Reference points',
+                          value: referencePointsCount.toString(),
+                          icon: Icons.person_outline,
+                          iconColor: const Color(0xFF7C3AED),
+                        ),
+                        AdminStatCard(
+                          label: 'Mentor marketplace',
+                          value: marketplaceCount.toString(),
+                          icon: Icons.workspace_premium_outlined,
+                          iconColor: const Color(0xFF0EA5E9),
+                        ),
+                      ],
+                    );
+                  },
                 );
               },
             );
@@ -244,7 +262,7 @@ class _QuickActions extends StatelessWidget {
         ),
       ),
       _QuickAction(
-        'Add mentor',
+        'Add reference',
         Icons.person_add_outlined,
         const Color(0xFF7C3AED),
         () => onNavigate?.call(3),
